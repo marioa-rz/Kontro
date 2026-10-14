@@ -3,7 +3,7 @@ name: Vercel Production Deploy
 on:
   workflow_run:
     workflows:
-      - Dragg CI
+      - Kontro CI
     types:
       - completed
     branches:

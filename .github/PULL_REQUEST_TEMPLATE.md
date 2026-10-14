@@ -1,6 +1,11 @@
 ## Summary
 
-Describe what changed and why.
+Describe the user problem, what changed, and why this is the smallest useful solution.
+
+## Acceptance Criteria
+
+- [ ] The requested behavior is observable and covered.
+- [ ] Empty, error, and boundary states were considered.
 
 ## Type of Change
 
@@ -10,12 +15,14 @@ Describe what changed and why.
 - [ ] Security hardening
 - [ ] Database migration
 - [ ] Refactor
+- [ ] Chore / tooling
 
 ## Testing
 
-- [ ] `npm run lint`
-- [ ] `npm run build`
-- [ ] `npm audit --audit-level=moderate`
+- [ ] `corepack pnpm run lint`
+- [ ] `corepack pnpm run test:coverage`
+- [ ] `corepack pnpm run build`
+- [ ] `corepack pnpm run security:audit` when dependencies changed
 - [ ] Manual testing completed
 
 ## Supabase / Database
@@ -33,4 +40,8 @@ Describe what changed and why.
 
 ## Notes
 
-Add screenshots, migration notes, or reviewer context here.
+Add screenshots, migration/rollback notes, risks, or reviewer context here.
+
+## Learning Note
+
+Name the main engineering concept this PR demonstrates and explain it in one or two sentences.

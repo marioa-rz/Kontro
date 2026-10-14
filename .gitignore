@@ -11,8 +11,8 @@ __v0_jsx-dev-runtime.ts
 next.user-config.*
 
 # Environment variables
-.env
-*.local
+.env*
+!.env.example
 .idea/*
 
 # Common ignores
@@ -22,7 +22,6 @@ package-lock.json
 coverage/
 tsconfig.tsbuildinfo
 .DS_Store
-AGENTS.md
 **.csv
 **/.temp
 

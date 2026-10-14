@@ -1,105 +1,49 @@
-# Contributing to Dragg
+# Contributing to Kontro
 
-Thank you for your interest in contributing to Dragg.
-
-Dragg is an open-source personal finance application. The project uses pull requests, protected branches, automated checks, and semantic versioning.
+Kontro uses GitHub Flow: `main` is always releasable and all work reaches it through a focused pull request from a short-lived branch. This keeps a solo project professional without the overhead of a permanent integration branch.
 
 ## Language
 
-All code, comments, pull requests, issues, documentation, labels, and UI text must be written in English.
+Use English for code, comments, commits, issues, pull requests, and durable technical documentation. Product translations and learning conversations may use Spanish.
 
-Portuguese translations may exist only as product translations or localized documentation.
+## Branches
 
-## Git flow
+Create a branch from an up-to-date `main`:
 
-The repository follows a lightweight Git Flow model:
-
-- `main`: stable branch. Only release-ready code should be merged here.
-- `develop`: integration branch for the next release.
-- `feature/*`: new features.
-- `fix/*`: bug fixes.
-- `chore/*`: maintenance, tooling, documentation, CI.
-- `release/*`: release stabilization branches.
-- `hotfix/*`: urgent fixes created from `main`.
-
-Expected flow:
-
-```txt
-feature/* -> develop -> release/* -> main
-hotfix/*  -> main -> develop
+```text
+feat/add-personal-debt-ledger
+fix/card-payment-double-counting
+chore/configure-repository
+docs/explain-rls
+refactor/extract-period-summary
 ```
 
-Direct pushes to `main` should not be allowed. All changes must enter `main` through pull requests.
+Do not push directly to `main`. Keep branches short-lived and delete them after merge.
 
-## Branch naming
+## Commits
 
-Use short, descriptive branch names:
+Use focused Conventional Commits:
 
-```txt
-feature/add-recurring-transactions
-fix/dashboard-budget-overflow
-chore/add-ci-pipeline
-release/v0.1.0-alpha
-hotfix/auth-callback-redirect
+```text
+feat: add personal debt repayment flow
+fix: prevent card payments from duplicating expenses
+docs: record the debt accounting decision
+test: cover weekly income boundaries
+chore: configure Dependabot
 ```
 
-## Commit convention
+## Engineering standards
 
-Use Conventional Commits:
-
-```txt
-feat: add category budget limits
-fix: correct credit card closing date calculation
-docs: update Supabase setup guide
-test: add transaction aggregation tests
-ci: add pull request checks
-chore: update dependencies
-refactor: simplify dashboard calculations
-```
-
-Accepted commit types:
-
-- `feat`
-- `fix`
-- `docs`
-- `test`
-- `ci`
-- `chore`
-- `refactor`
-- `style`
-- `perf`
-- `build`
-- `revert`
-
-## Code standards
-
-- Use TypeScript.
-- Keep components reusable.
-- Follow the existing project structure.
-- Keep business logic outside UI components when possible.
-- Prefer existing shadcn/ui primitives.
-- Use existing translation keys instead of ad hoc UI text.
-- Keep data fetching and mutations in server-side modules or Server Actions when credentials or ownership checks matter.
-- Validate Server Action input at runtime before writing to Supabase.
-- Verify user ownership for any mutation that receives database IDs from the client.
-- Do not introduce service-role operations into client-rendered code.
-- Keep Supabase SSR clients in `lib/supabase/*` unless a new boundary is needed.
-- Keep finance reads and business logic in `lib/finance/*` instead of UI components.
-- Keep desktop dialogs, except the new transaction dialog, at the project standard of 50vw by 50vh.
-
-## Supabase changes
-
-- Add SQL migrations under `supabase/migrations`.
-- Keep RLS policies aligned with authenticated user ownership.
-- Keep privileged helper functions in a private or otherwise unexposed schema.
-- Do not use `user_metadata` for authorization decisions.
-- Do not expose Supabase service-role credentials to the browser.
-- When transactions reference categories or payment methods, preserve same-user ownership guarantees.
-- Preserve LGPD/privacy workflow support when changing user-owned tables.
+- Keep finance rules in `lib/finance/`, not in React components.
+- Validate Server Action input with Zod and verify ownership before every mutation.
+- Add forward-only migrations under `supabase/migrations` and preserve RLS isolation.
+- Reuse accessible UI primitives and the existing i18n and formatting helpers.
+- Add tests that prove behavior, especially period boundaries and balance calculations.
+- Never commit secrets, production data, `.env.local`, access tokens, or service-role credentials.
 
 ## Pull requests
 
-Before opening a pull request:
+Before opening a pull request, run:
 
 ```bash
 corepack pnpm run lint
@@ -107,44 +51,10 @@ corepack pnpm run test:coverage
 corepack pnpm run build
 ```
 
-A pull request should include:
+The pull request must explain the user problem, solution, test evidence, risk, and any migration/RLS impact. Include screenshots for visible changes. Keep the diff focused enough to review and revert safely.
 
-- Clear description of the change.
-- Linked issue when applicable.
-- Screenshots or videos for UI changes.
-- Migration notes for database changes.
-- Test notes.
-
-Keep PRs small and focused.
-
-## Issues
-
-Use clear issue titles and include enough context for maintainers to reproduce or evaluate the request.
-
-For bugs, include:
-
-- What happened.
-- What was expected.
-- Steps to reproduce.
-- Browser/device information.
-- Screenshots if relevant.
-
-For features, include:
-
-- The user problem.
-- Proposed behavior.
-- Alternatives considered.
+Use squash merge by default. Require passing status checks and resolved review conversations on `main`. An approving review is recommended when another collaborator is available; do not make solo development impossible by requiring the author to self-approve.
 
 ## Releases
 
-Dragg uses semantic versioning.
-
-Initial public releases should use pre-release tags until the app is production-ready, for example:
-
-```txt
-v0.1.0-alpha.1
-v0.1.0-beta.1
-v1.0.0
-```
-
-Use `CHANGELOG.md` as the release checklist source until a dedicated release-process document exists.
+Use semantic versioning. Keep early releases pre-1.0 until the ledger semantics, migration path, security review, and recovery workflow are stable.

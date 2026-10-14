@@ -2,33 +2,33 @@
 	<img width="180" src="public/dragg-logo-wordmark.svg" alt="Dragg" />
 </h1>
 
-<h3 align="center">Dragg</h3>
+<h3 align="center">Kontro</h3>
 
 <p align="center">
-	Open-source personal finance app built with Next.js and Supabase.
+	Personal finance, debt, and savings control built with Next.js and Supabase.
 </p>
 
 <p align="center">
-	<a href="https://github.com/fsousac/Dragg/actions/workflows/ci.yml">
-		<img src="https://github.com/fsousac/Dragg/actions/workflows/ci.yml/badge.svg" alt="CI" />
+	<a href="https://github.com/marioa-rz/Kontro/actions/workflows/ci.yml">
+		<img src="https://github.com/marioa-rz/Kontro/actions/workflows/ci.yml/badge.svg" alt="CI" />
 	</a>
-	<a href="https://github.com/fsousac/Dragg/actions/workflows/codeql-analysis.yml">
-		<img src="https://github.com/fsousac/Dragg/actions/workflows/codeql-analysis.yml/badge.svg" alt="CodeQL" />
+	<a href="https://github.com/marioa-rz/Kontro/actions/workflows/codeql-analysis.yml">
+		<img src="https://github.com/marioa-rz/Kontro/actions/workflows/codeql-analysis.yml/badge.svg" alt="CodeQL" />
 	</a>
-	<a href="https://github.com/fsousac/Dragg/blob/main/LICENSE">
+	<a href="https://github.com/marioa-rz/Kontro/blob/main/LICENSE">
 		<img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" />
 	</a>
-	<a href="https://github.com/fsousac/Dragg/blob/main/package.json">
-		<img src="https://img.shields.io/badge/next-16.2.6-black" alt="Next.js" />
+	<a href="https://github.com/marioa-rz/Kontro/blob/main/package.json">
+		<img src="https://img.shields.io/badge/next-16.3.1-black" alt="Next.js" />
 	</a>
-	<a href="https://github.com/fsousac/Dragg/blob/main/package.json">
+	<a href="https://github.com/marioa-rz/Kontro/blob/main/package.json">
 		<img src="https://img.shields.io/badge/react-19-149eca" alt="React" />
 	</a>
 </p>
 
-Dragg is an open-source personal finance web app for tracking income, expenses, budgets, categories, payment methods, subscriptions, goals, reports, and monthly progress.
+Kontro is an open-source personal finance web app for tracking income, expenses, budgets, categories, payment methods, subscriptions, goals, reports, and monthly progress. The roadmap extends this foundation with explicit personal-debt ledgers, payment calendars, business views, and daily/weekly/monthly summaries.
 
-It is designed to be simple to self-host and inexpensive to operate, with Supabase handling authentication and data security through PostgreSQL + Row Level Security.
+It is designed to be simple to self-host and inexpensive to operate, with Supabase handling authentication and data security through PostgreSQL + Row Level Security. Kontro is based on [Dragg](https://github.com/fsousac/Dragg); its MIT license and Git history are preserved.
 
 ### 🔥 Features
 
@@ -60,8 +60,8 @@ Requirements:
 Clone and run locally:
 
 ```bash
-git clone https://github.com/fsousac/Dragg.git
-cd Dragg
+git clone https://github.com/marioa-rz/Kontro.git
+cd Kontro
 corepack enable
 pnpm install
 cp .env.example .env.local
@@ -88,6 +88,8 @@ If you are not using Supabase CLI, apply SQL files from `supabase/migrations` in
 ### 📖 Documentation
 
 - [Architecture](./docs/architecture.md)
+- [Foundation decision](./docs/decisions/0001-adopt-dragg-as-foundation.md)
+- [Product requirements](./docs/product/requirements.md)
 - [Authentication](./docs/auth.md)
 - [Database](./docs/database.md)
 - [Security Notes](./docs/security.md)
@@ -99,11 +101,11 @@ If you are not using Supabase CLI, apply SQL files from `supabase/migrations` in
 
 ### 📌 Compatibility
 
-Dragg currently targets:
+Kontro currently targets:
 
 - Next.js 16
 - React 19
-- TypeScript 5
+- TypeScript 6
 - Node.js 24.x
 - pnpm 10.x
 - Supabase Postgres
@@ -137,7 +139,7 @@ pnpm run e2e:ui         # Run Playwright E2E tests interactively
 
 ### 🚀 Deployment
 
-Dragg is ready to deploy on Vercel.
+Kontro is designed to deploy on Vercel.
 
 1. Import repository into Vercel.
 2. Configure the same environment variables used locally.
@@ -153,8 +155,8 @@ The repository also includes GitHub Actions for CodeQL, quality checks, and prod
 
 Contributions are welcome.
 
-1. Fork the repository.
-2. Create a feature branch.
+1. Create a short-lived branch from `main`.
+2. Follow the branch and commit conventions in `CONTRIBUTING.md`.
 3. Keep changes focused and include tests when possible.
 4. Add migrations for any schema change.
 5. Update docs when behavior changes.
@@ -165,4 +167,4 @@ Issue and pull request templates are available under [`.github`](./.github).
 
 ### 🔓 License
 
-Dragg is released under the [MIT License](./LICENSE).
+Kontro is released under the [MIT License](./LICENSE) and retains the original Dragg copyright notice.
