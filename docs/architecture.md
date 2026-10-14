@@ -30,7 +30,9 @@ Dragg is a Next.js App Router application backed by Supabase Auth and Supabase P
 
 ## Finance model
 
+- Kontro supports multiple authenticated people without shared financial workspaces. Every user-owned aggregate and row is scoped to one Supabase Auth user, and RLS is the database-level isolation boundary.
 - Transactions are income, expense, or saving records.
+- A saving record is not an expense. It contributes to savings progress and reduces spendable money in cash-flow summaries without inflating consumption totals.
 - Expenses can be split into installments; each occurrence is stored as its own transaction and grouped by shared installment metadata.
 - Installment deletion supports single, selected-and-following, and full-group scopes. Installment prepayment preserves the original transaction dates and writes `advanced_to_month` metadata so payment/invoice views move the obligation without changing purchase competence.
 - Monthly subscriptions are represented by future transaction rows whose `notes` start with `subscription`. There is no explicit paid/unpaid column, so scoped subscription deletion removes the selected occurrence and matching future rows while preserving earlier history.
@@ -42,6 +44,7 @@ Dragg is a Next.js App Router application backed by Supabase Auth and Supabase P
 - Credit cards support `credit_limit`, `due_day`, and `closing_day`. Invoice rows are calculated in `lib/finance/credit-card-invoices.ts` for display and planning.
 - Payment method usage is calculated in `lib/finance/payment-method-overview.ts`.
 - Goals are stored separately from transactions and support create, edit, fund, and delete operations.
+- The Kontro savings slice must make goal funding and dated savings contributions consistent so progress and period summaries cannot diverge.
 - Reports aggregate transactions by financial month, including credit card due-month behavior.
 
 ## UI conventions
