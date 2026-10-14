@@ -1,9 +1,10 @@
-export type CurrencyCode = "BRL" | "USD" | "EUR";
+export type CurrencyCode = "GTQ" | "BRL" | "USD" | "EUR";
 
-const supportedCurrencies = new Set<CurrencyCode>(["BRL", "USD", "EUR"]);
-const storageKey = "dragg-currency";
+const supportedCurrencies = new Set<CurrencyCode>(["GTQ", "BRL", "USD", "EUR"]);
+const storageKey = "kontro-currency";
+const legacyStorageKey = "dragg-currency";
 
-const defaultCurrency: CurrencyCode = "USD";
+const defaultCurrency: CurrencyCode = "GTQ";
 
 export function isSupportedCurrency(value: unknown): value is CurrencyCode {
   return supportedCurrencies.has(value as CurrencyCode);
@@ -12,7 +13,9 @@ export function isSupportedCurrency(value: unknown): value is CurrencyCode {
 export function getStoredCurrency(): CurrencyCode {
   if (typeof window === "undefined") return defaultCurrency;
   try {
-    const stored = window.localStorage.getItem(storageKey);
+    const stored =
+      window.localStorage.getItem(storageKey) ??
+      window.localStorage.getItem(legacyStorageKey);
     if (stored && isSupportedCurrency(stored)) return stored;
   } catch {}
   return defaultCurrency;

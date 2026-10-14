@@ -105,7 +105,7 @@ function SidebarLogo() {
           aria-hidden="true"
         />
       </div>
-      <span className="text-xl font-bold text-foreground">Dragg</span>
+      <span className="text-xl font-bold text-foreground">Kontro</span>
     </div>
   );
 }

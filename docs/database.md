@@ -21,6 +21,7 @@ The current committed schema defines these Supabase tables:
 - `005_add_installment_group_metadata.sql`: adds stable installment grouping metadata and an authenticated-user scoped installment group index.
 - `006_add_installment_prepayment_metadata.sql`: adds installment prepayment metadata and an authenticated-user scoped prepayment month index.
 - `010_stop_writing_plaintext_profile_pii.sql`: stops the signup trigger from writing plaintext `profiles.name`/`email` (application-layer encryption now owns these fields, see `lib/crypto/field-encryption.ts`), and drops the now-unused `transactions_user_id_notes_idx` partial index.
+- `011_localize_guatemala_defaults.sql`: replaces the signup defaults for future users with Kontro's Guatemala-oriented categories and payment methods. It deliberately does not rename or overwrite existing user-owned data.
 
 ## What belongs in the repository
 
@@ -51,7 +52,7 @@ The repository must not include:
 - `updated_at`
 - `deleted_at`
 
-`private.handle_new_user()` no longer writes plaintext `name`/`email` into `profiles` (see migration `010`). `lib/auth/encrypted-profile.ts` fills them in, encrypted, on the user's next authenticated request.
+`private.handle_new_user()` no longer writes plaintext `name`/`email` into `profiles` (see migrations `010` and `011`). `lib/auth/encrypted-profile.ts` fills them in, encrypted, on the user's next authenticated request.
 
 ## Category fields used by the app
 
@@ -160,6 +161,8 @@ The table supports LGPD workflows for access, export, correction, deletion, cons
 - `on_auth_user_created` runs after inserts on `auth.users`.
 
 Email/password signups and Google OAuth signups both insert users into `auth.users`, so both flows use the same `on_auth_user_created` onboarding trigger. Do not duplicate default profile, category, or payment-method setup in frontend code.
+
+Migration `011` changes only the onboarding function used for future signups. Existing categories and payment methods remain untouched because they are user-owned financial records. A future opt-in migration assistant can map older defaults without silently changing personal data.
 
 ## Applying migrations
 

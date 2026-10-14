@@ -15,7 +15,7 @@ import type {
 import { createClient } from "@/lib/supabase/server";
 
 function getDisplayName(email: string) {
-  return email.split("@")[0] || "Dragg";
+  return email.split("@")[0] || "Kontro";
 }
 
 function getInitials(name: string) {

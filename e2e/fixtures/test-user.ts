@@ -5,7 +5,7 @@ export function createTestUser() {
   return {
     email: `e2e-${unique}@example.com`,
     password: "Secure1!x",
-    firstName: "Dragg",
+    firstName: "Kontro",
     lastName: `E2E ${unique}`,
   };
 }

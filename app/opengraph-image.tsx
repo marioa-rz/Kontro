@@ -31,7 +31,7 @@ function Wordmark() {
         lineHeight: 1,
       }}
     >
-      Dragg
+      Kontro
     </span>
   );
 }
@@ -46,7 +46,7 @@ function Tagline() {
         lineHeight: 1.3,
       }}
     >
-      Personal Finance Dashboard · Open Source · Free
+      Finanzas personales · Código abierto · Gratis
     </span>
   );
 }
@@ -65,7 +65,7 @@ function PillBadge() {
         color: "rgba(255, 255, 255, 0.6)",
       }}
     >
-      dragg-finance.vercel.app
+      github.com/marioa-rz/Kontro
     </div>
   );
 }

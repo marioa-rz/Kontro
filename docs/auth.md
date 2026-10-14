@@ -1,6 +1,6 @@
 # Authentication
 
-Dragg uses Supabase Auth for all authentication. Google OAuth remains supported, and email/password authentication is available as an alternative provider.
+Kontro uses Supabase Auth for all authentication. Google OAuth remains supported, and email/password authentication is available as an alternative provider.
 
 ## Supported providers
 

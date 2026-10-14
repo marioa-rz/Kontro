@@ -19,7 +19,8 @@ type ThemeContextValue = {
   theme: Theme;
 };
 
-const storageKey = "dragg-theme";
+const storageKey = "kontro-theme";
+const legacyStorageKey = "dragg-theme";
 const ThemeContext = React.createContext<ThemeContextValue | null>(null);
 
 function getSystemTheme(): ResolvedTheme {
@@ -65,13 +66,18 @@ function applyThemeToDocument({
 
 function useStoredThemeSync(setThemeState: (theme: Theme) => void) {
   React.useEffect(() => {
-    const storedTheme = window.localStorage.getItem(storageKey) as Theme | null;
+    const currentTheme = window.localStorage.getItem(storageKey);
+    const storedTheme = (currentTheme ??
+      window.localStorage.getItem(legacyStorageKey)) as Theme | null;
 
     if (
       storedTheme === "dark" ||
       storedTheme === "light" ||
       storedTheme === "system"
     ) {
+      if (!currentTheme) {
+        window.localStorage.setItem(storageKey, storedTheme);
+      }
       setThemeState(storedTheme);
     }
   }, [setThemeState]);

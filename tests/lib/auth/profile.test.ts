@@ -28,7 +28,9 @@ function mockSupabase(
 ) {
   vi.mocked(createClient).mockResolvedValue({
     auth: {
-      getClaims: vi.fn().mockResolvedValue({ data: claims ? { claims } : null }),
+      getClaims: vi
+        .fn()
+        .mockResolvedValue({ data: claims ? { claims } : null }),
       getUser: vi.fn().mockResolvedValue({ data: { user } }),
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -80,7 +82,7 @@ describe("getOAuthProfile", () => {
     });
   });
 
-  it("falls back to 'Dragg' name and claims email, finding avatar via nested object URL match", async () => {
+  it("falls back to 'Kontro' name and claims email, finding avatar via nested object URL match", async () => {
     mockSupabase(
       { sub: "4", email: "claims4@example.com" },
       {
@@ -102,8 +104,8 @@ describe("getOAuthProfile", () => {
       avatarUrl: "https://lh3.googleusercontent.com/a-xyz",
       createdAt: null,
       email: "claims4@example.com",
-      firstName: "Dragg",
-      fullName: "Dragg",
+      firstName: "Kontro",
+      fullName: "Kontro",
       lastName: "",
     });
   });

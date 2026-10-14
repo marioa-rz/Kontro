@@ -24,7 +24,7 @@ const translations: Record<string, string> = {
     "Needs, wants, and savings — neatly organized.",
   "landing.feature.smartCategories.title": "Smart categories",
   "landing.featuresLabel": "Features",
-  "landing.heading": "Dragg – Personal Finance Dashboard",
+  "landing.heading": "Kontro – Personal Finance Dashboard",
   "landing.license": "MIT License",
   "landing.openSource": "Open source",
 };
@@ -60,7 +60,7 @@ describe("LandingContent", () => {
   it("renders translated headings, features, and footer", () => {
     const html = renderToStaticMarkup(<LandingContent />);
 
-    expect(html).toContain("Dragg – Personal Finance Dashboard");
+    expect(html).toContain("Kontro – Personal Finance Dashboard");
     expect(html).toContain("Personal finance, open source and free.");
     expect(html).toContain("Your data, your control");
     expect(html).toContain("Financial goals");
@@ -76,6 +76,8 @@ describe("LandingContent", () => {
     const html = renderToStaticMarkup(<LandingContent />);
     const mainTag = html.match(/<main class="[^"]*"/)?.[0];
 
-    expect(mainTag).toBe('<main class="min-h-screen bg-background text-foreground"');
+    expect(mainTag).toBe(
+      '<main class="min-h-screen bg-background text-foreground"',
+    );
   });
 });

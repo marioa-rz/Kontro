@@ -137,7 +137,7 @@ function resolveFullName(
   return (
     getMetadataValue(metadata, ["full_name", "name", "display_name"]) ||
     email?.split("@")[0] ||
-    "Dragg"
+    "Kontro"
   );
 }
 
