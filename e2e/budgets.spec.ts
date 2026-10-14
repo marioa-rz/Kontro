@@ -6,7 +6,7 @@ test("configures a category budget and sees it reflected on the Budgets page", a
   const categoryName = `E2E Budget ${Date.now()}`;
 
   await page.goto("/categories");
-  await page.getByRole("button", { name: "New Category" }).click();
+  await page.getByRole("button", { name: "Nueva categoría" }).click();
 
   const dialog = page.getByRole("dialog");
   await dialog.locator("#category-name").fill(categoryName);
@@ -21,7 +21,7 @@ test("configures a category budget and sees it reflected on the Budgets page", a
   await page.goto("/budgets");
 
   await expect(
-    page.getByRole("heading", { name: "Budgets" }),
+    page.getByRole("heading", { name: "Presupuestos" }),
   ).toBeVisible();
   await expect(page.getByText("Category Budgets")).toBeVisible();
   await expect(page.getByText(categoryName, { exact: true })).toBeVisible();

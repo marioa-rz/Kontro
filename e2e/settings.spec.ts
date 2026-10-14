@@ -6,7 +6,7 @@ test("toggles theme and persists it across reloads", async ({ page }) => {
   const html = page.locator("html");
   const wasDark = (await html.getAttribute("class"))?.includes("dark") ?? false;
 
-  await page.getByRole("button", { name: "Toggle theme" }).first().click();
+  await page.getByRole("button", { name: "Cambiar tema" }).first().click();
 
   if (wasDark) {
     await expect(html).not.toHaveClass(/dark/);
