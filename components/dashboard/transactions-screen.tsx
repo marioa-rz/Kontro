@@ -84,6 +84,11 @@ import {
   type DeleteSubscriptionOccurrencesInput,
   type InstallmentPrepaymentPreview,
 } from "@/lib/finance/transactions";
+import {
+  addDaysToDateValue,
+  getGuatemalaDateValue,
+  getGuatemalaMonthValue,
+} from "@/lib/datetime/guatemala";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -2938,9 +2943,9 @@ function useTransactionsScreenNavigation({
   formatDate: FormatDate;
 }) {
   const selectedMonth =
-    searchParams.get("month") ?? new Date().toISOString().slice(0, 7);
-  const today = new Date().toISOString().slice(0, 10);
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    searchParams.get("month") ?? getGuatemalaMonthValue();
+  const today = getGuatemalaDateValue();
+  const yesterday = addDaysToDateValue(today, -1);
 
   const transactionsHref = useMemo(() => {
     const params = new URLSearchParams(searchParams.toString());

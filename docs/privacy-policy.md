@@ -1,18 +1,18 @@
 # Privacy Policy
 
-> **Status: Draft.** This document was drafted from the current implementation of the Dragg codebase to satisfy the sign-up consent requirement. It has not been reviewed by a lawyer and should not be treated as final or legally binding until a maintainer (or qualified legal counsel) reviews and approves it. See [Terms version history](#policy-version-history).
+> **Status: Draft.** This document was drafted from the current Kontro implementation to satisfy the sign-up consent requirement. It has not been reviewed by a lawyer and should not be treated as final or legally binding until a maintainer (or qualified legal counsel) reviews and approves it. See [Terms version history](#policy-version-history).
 
 **Version 0.1.0-draft — Last updated: 2026-07-18**
 
-This Privacy Policy explains what data Dragg collects, how it is stored, and what rights you have over it. It should be read together with the [Terms of Use](./terms-of-use.md).
+This Privacy Policy explains what data Kontro collects, how it is stored, and what rights you have over it. It should be read together with the [Terms of Use](./terms-of-use.md).
 
 ## 1. Purpose of the platform
 
-See the [Terms of Use, "Purpose of the platform"](./terms-of-use.md#1-purpose-of-the-platform) for how Dragg works. This policy focuses specifically on data handling.
+See the [Terms of Use, "Purpose of the platform"](./terms-of-use.md#1-purpose-of-the-platform) for how Kontro works. This policy focuses specifically on data handling.
 
 ## 2. Data we collect
 
-When you create an account and use Dragg, we store:
+When you create an account and use Kontro, we store:
 
 - **Account/profile data**: name, email address, and (for Google sign-in) profile photo, as provided by Supabase Auth or your Google account.
 - **Authentication data**: managed entirely by Supabase Auth (hashed credentials, OAuth tokens). The app itself never sees or stores your password.
@@ -21,7 +21,7 @@ When you create an account and use Dragg, we store:
 
 ## 3. Data we do NOT collect
 
-- We do not collect or store your bank credentials, card numbers, or any data needed to actually move money — Dragg does not connect to banks or card networks.
+- We do not collect or store your bank credentials, card numbers, or any data needed to actually move money — Kontro does not connect to banks or card networks.
 - We do not sell your data to third parties or use it for targeted advertising.
 - We do not track you across other websites or apps.
 - We do not require government ID or other identity documents to use the app.
@@ -50,7 +50,7 @@ When you create an account and use Dragg, we store:
 ## 7. Third-party integrations and data sharing
 
 - **Supabase**: processes and stores your account and financial data as our database and auth provider.
-- **Google**: if you choose "Continue with Google," Google authenticates you and shares your name, email, and profile photo with Dragg via OAuth, per Google's own privacy terms.
+- **Google**: if you choose "Continue with Google," Google authenticates you and shares your name, email, and profile photo with Kontro via OAuth, per Google's own privacy terms.
 - **Vercel**: hosts the application and, in production, collects aggregated analytics/performance data through Vercel Analytics and Speed Insights.
 - We do not share your financial data with any other third party, and we do not sell it.
 
@@ -62,7 +62,7 @@ When you create an account and use Dragg, we store:
 
 ## 9. Platform limitations and disclaimer
 
-Dragg is a personal record-keeping tool, not a financial institution. See the [Terms of Use, "Limitations and disclaimer"](./terms-of-use.md#7-limitations-and-disclaimer) for the full disclaimer, including that Dragg does not provide financial, tax, or legal advice.
+Kontro is a personal record-keeping tool, not a financial institution. See the [Terms of Use, "Limitations and disclaimer"](./terms-of-use.md#7-limitations-and-disclaimer) for the full disclaimer, including that Kontro does not provide financial, tax, or legal advice.
 
 ## 10. Your rights
 
@@ -72,11 +72,11 @@ The database schema includes a `privacy_requests` table designed to support acce
 
 ## 11. Contact and requests
 
-- General questions: open a [GitHub issue](https://github.com/fsousac/Dragg/issues).
-- Data access, correction, export, or deletion requests, and security or privacy-sensitive matters: open a private [GitHub Security Advisory](https://github.com/fsousac/Dragg/security/advisories) or contact a maintainer directly, per `SECURITY.md`. Please do not include sensitive account details in a public issue.
+- General questions: open a [GitHub issue](https://github.com/marioa-rz/Kontro/issues).
+- Data access, correction, export, or deletion requests, and security or privacy-sensitive matters: open a private [GitHub Security Advisory](https://github.com/marioa-rz/Kontro/security/advisories) or contact a maintainer directly, per `SECURITY.md`. Please do not include sensitive account details in a public issue.
 
 ## Policy version history
 
-| Version | Date | Change |
-|---|---|---|
+| Version     | Date       | Change                                                                                    |
+| ----------- | ---------- | ----------------------------------------------------------------------------------------- |
 | 0.1.0-draft | 2026-07-18 | Initial draft, pending maintainer review, created alongside the sign-up consent checkbox. |

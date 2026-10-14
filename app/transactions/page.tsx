@@ -17,6 +17,7 @@ import {
   updateTransactionAction,
   createPaymentMethodAction,
 } from "@/app/transactions/actions";
+import { getGuatemalaMonthValue } from "@/lib/datetime/guatemala";
 
 type TransactionsPageProps = {
   readonly searchParams?: Promise<{
@@ -36,7 +37,7 @@ function getNextMonthValue(month: string) {
 function resolveMonthParam(value: string | string[] | undefined): string {
   return Array.isArray(value)
     ? value[0]
-    : (value ?? new Date().toISOString().slice(0, 7));
+    : (value ?? getGuatemalaMonthValue());
 }
 
 function resolveFlagParam(value: string | string[] | undefined): boolean {

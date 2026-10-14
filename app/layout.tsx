@@ -5,6 +5,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { LanguageProvider } from "@/lib/i18n";
+import { REPOSITORY_URL, SITE_NAME, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const satoshi = localFont({
@@ -35,13 +36,13 @@ const satoshi = localFont({
 });
 
 const DESCRIPTION =
-  "Free and open-source personal finance app. Track income, expenses, budgets, goals, and reports. Self-hostable. Built with Next.js + Supabase.";
+  "Aplicación de finanzas personales de código abierto para controlar ingresos, gastos, presupuestos, metas y reportes.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://dragg-finance.vercel.app"),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "Dragg – Personal Finance Dashboard | Open Source",
-    template: "%s | Dragg",
+    default: "Kontro – Control de finanzas personales",
+    template: `%s | ${SITE_NAME}`,
   },
   description: DESCRIPTION,
   keywords: [
@@ -55,18 +56,18 @@ export const metadata: Metadata = {
     "nextjs finance app",
   ],
   alternates: {
-    canonical: "https://dragg-finance.vercel.app",
+    canonical: SITE_URL,
   },
   openGraph: {
     type: "website",
-    url: "https://dragg-finance.vercel.app",
-    siteName: "Dragg",
-    title: "Dragg – Open Source Personal Finance Dashboard",
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: "Kontro – Control de finanzas personales",
     description: DESCRIPTION,
   },
   twitter: {
     card: "summary_large_image",
-    title: "Dragg – Open Source Personal Finance Dashboard",
+    title: "Kontro – Control de finanzas personales",
     description: DESCRIPTION,
   },
   icons: {
@@ -91,25 +92,24 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem("dragg-theme");var d=t==="dark"||t==="light"?t==="dark":window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.classList.toggle("dark",d);document.documentElement.style.colorScheme=d?"dark":"light";}catch(e){}})();`;
+const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem("kontro-theme")||localStorage.getItem("dragg-theme");var d=t==="dark"||t==="light"?t==="dark":window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.classList.toggle("dark",d);document.documentElement.style.colorScheme=d?"dark":"light";}catch(e){}})();`;
 
 const STRUCTURED_DATA = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  name: "Dragg",
-  alternateName: "Dragg Finance",
+  name: SITE_NAME,
+  alternateName: "Kontro Finanzas",
   applicationCategory: "FinanceApplication",
   operatingSystem: "Web",
-  description:
-    "Free and open-source personal finance app. Track income, expenses, budgets, goals, and reports. Self-hostable.",
-  inLanguage: "en",
+  description: DESCRIPTION,
+  inLanguage: "es-GT",
   offers: {
     "@type": "Offer",
     price: "0",
-    priceCurrency: "BRL",
+    priceCurrency: "GTQ",
   },
-  url: "https://dragg-finance.vercel.app",
-  sameAs: ["https://github.com/fsousac/Dragg"],
+  url: SITE_URL,
+  sameAs: [REPOSITORY_URL],
 };
 
 export default function RootLayout({
@@ -118,7 +118,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="es-GT" suppressHydrationWarning>
       <body
         className={`${satoshi.variable} bg-background font-sans antialiased`}
       >

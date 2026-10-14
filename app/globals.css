@@ -32,13 +32,13 @@
   --ring: #22c55e;
   --radius: 0.75rem;
 
-  /* Dragg surface tokens */
+  /* Kontro surface tokens */
   --surface: #ffffff;
   --surface-elevated: #fffdf8;
   --border-strong: #e0d4c4;
   --border-subtle: rgba(241, 231, 218, 0.6);
 
-  /* Dragg text tokens */
+  /* Kontro text tokens */
   --text-primary: #1a1c1e;
   --text-secondary: #6b6f76;
   --text-muted: #a6a29a;
@@ -135,13 +135,13 @@
   --input: #1f2428;
   --ring: #22c55e;
 
-  /* Dragg surface tokens */
+  /* Kontro surface tokens */
   --surface: #111418;
   --surface-elevated: #161b21;
   --border-strong: #2a3038;
   --border-subtle: rgba(31, 36, 40, 0.8);
 
-  /* Dragg text tokens */
+  /* Kontro text tokens */
   --text-primary: #f5f7fa;
   --text-secondary: #a1a7ad;
   --text-muted: #6b7280;
@@ -256,7 +256,7 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* Dragg finance semantic mappings */
+  /* Kontro finance semantic mappings */
   --color-income: var(--income);
   --color-income-bg: var(--income-bg);
   --color-expense: var(--expense);
@@ -274,7 +274,7 @@
   --color-error: var(--error);
   --color-error-bg: var(--error-bg);
 
-  /* Dragg surface / text mappings */
+  /* Kontro surface / text mappings */
   --color-surface: var(--surface);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
@@ -378,7 +378,7 @@
   box-shadow: var(--shadow-sm);
 }
 
-/* Dragg loading animation */
+/* Kontro loading animation */
 .dragg-loading-loader {
   position: relative;
   z-index: 0;

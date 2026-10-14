@@ -11,6 +11,7 @@ import {
   updatePaymentMethodAction,
   updateSubscriptionAction,
 } from "@/app/transactions/actions";
+import { getGuatemalaMonthValue } from "@/lib/datetime/guatemala";
 import {
   getPaymentsDueData,
   getTransactionFormOptions,
@@ -25,8 +26,7 @@ type PaymentsPageProps = {
 };
 
 function getCurrentMonthValue() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  return getGuatemalaMonthValue();
 }
 
 function normalizeMonthValue(month?: string) {

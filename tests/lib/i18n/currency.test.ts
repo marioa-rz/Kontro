@@ -12,7 +12,8 @@ afterEach(() => {
 });
 
 describe("isSupportedCurrency", () => {
-  it("returns true for BRL, USD, EUR", () => {
+  it("returns true for GTQ, BRL, USD, EUR", () => {
+    expect(isSupportedCurrency("GTQ")).toBe(true);
     expect(isSupportedCurrency("BRL")).toBe(true);
     expect(isSupportedCurrency("USD")).toBe(true);
     expect(isSupportedCurrency("EUR")).toBe(true);
@@ -39,8 +40,8 @@ describe("getStoredCurrency / setStoredCurrency (SSR - no window)", () => {
     globalThis.window = savedWindow;
   });
 
-  it("returns default currency when window is undefined", () => {
-    expect(getStoredCurrency()).toBe("USD");
+  it("returns GTQ when window is undefined", () => {
+    expect(getStoredCurrency()).toBe("GTQ");
   });
 
   it("does not throw when setting currency without window", () => {
@@ -61,19 +62,19 @@ describe("getStoredCurrency / setStoredCurrency (browser)", () => {
     });
   });
 
-  it("defaults to USD when nothing is stored", () => {
-    expect(getStoredCurrency()).toBe("USD");
+  it("defaults to GTQ when nothing is stored", () => {
+    expect(getStoredCurrency()).toBe("GTQ");
   });
 
   it("reads and writes stored currency", () => {
-    setStoredCurrency("BRL");
-    expect(getStoredCurrency()).toBe("BRL");
+    setStoredCurrency("GTQ");
+    expect(getStoredCurrency()).toBe("GTQ");
     setStoredCurrency("EUR");
     expect(getStoredCurrency()).toBe("EUR");
   });
 
-  it("falls back to USD when stored value is unsupported", () => {
-    const store: Record<string, string> = { "dragg-currency": "GBP" };
+  it("reads a supported currency from the legacy Dragg key", () => {
+    const store: Record<string, string> = { "dragg-currency": "EUR" };
     vi.stubGlobal("window", {
       localStorage: {
         getItem: (key: string) => store[key] ?? null,
@@ -82,7 +83,21 @@ describe("getStoredCurrency / setStoredCurrency (browser)", () => {
         },
       },
     });
-    expect(getStoredCurrency()).toBe("USD");
+
+    expect(getStoredCurrency()).toBe("EUR");
+  });
+
+  it("falls back to GTQ when stored value is unsupported", () => {
+    const store: Record<string, string> = { "kontro-currency": "GBP" };
+    vi.stubGlobal("window", {
+      localStorage: {
+        getItem: (key: string) => store[key] ?? null,
+        setItem: (key: string, value: string) => {
+          store[key] = value;
+        },
+      },
+    });
+    expect(getStoredCurrency()).toBe("GTQ");
   });
 
   it("handles localStorage throwing on read", () => {
@@ -96,7 +111,7 @@ describe("getStoredCurrency / setStoredCurrency (browser)", () => {
         },
       },
     });
-    expect(getStoredCurrency()).toBe("USD");
+    expect(getStoredCurrency()).toBe("GTQ");
   });
 
   it("handles localStorage throwing on write", () => {
@@ -113,6 +128,11 @@ describe("getStoredCurrency / setStoredCurrency (browser)", () => {
 });
 
 describe("formatCurrency", () => {
+  it("formats GTQ with Guatemala locale", () => {
+    const result = formatCurrency(2883.03, "es-GT", "GTQ");
+    expect(result).toContain("Q");
+  });
+
   it("formats BRL with Brazilian locale", () => {
     const result = formatCurrency(2883.03, "pt-BR", "BRL");
     expect(result).toContain("R$");

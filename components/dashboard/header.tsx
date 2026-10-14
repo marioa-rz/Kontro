@@ -241,7 +241,7 @@ interface MobileHeaderProps extends MonthPickerState {
   readonly settingsHref: string;
 }
 
-function DraggLogo() {
+function KontroLogo() {
   return (
     <div className="flex items-center gap-2">
       <div className="flex items-center justify-center w-9 h-9 rounded-xl border border-border bg-card">
@@ -256,7 +256,7 @@ function DraggLogo() {
           aria-hidden="true"
         />
       </div>
-      <span className="text-lg font-bold text-foreground">Dragg</span>
+      <span className="text-lg font-bold text-foreground">Kontro</span>
     </div>
   );
 }
@@ -277,7 +277,7 @@ function MobileHeader({
 }: MobileHeaderProps) {
   return (
     <div className="lg:hidden flex items-center justify-between px-4 py-3">
-      <DraggLogo />
+      <KontroLogo />
       <div className="flex items-center gap-2">
         <ThemeToggle />
         <MonthPickerTrigger

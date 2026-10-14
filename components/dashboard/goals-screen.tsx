@@ -54,6 +54,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import {
+  addYearsToDateValue,
+  getGuatemalaDateValue,
+} from "@/lib/datetime/guatemala";
+import {
   type CreateGoalInput,
   type GoalOverviewItem,
   type UpdateGoalInput,
@@ -93,17 +97,16 @@ const goalColors = [
 ];
 
 function getTodayValue() {
-  return new Date().toISOString().slice(0, 10);
+  return getGuatemalaDateValue();
 }
 
 function getInitialGoalForm(): GoalFormState {
-  const nextYear = new Date();
-  nextYear.setFullYear(nextYear.getFullYear() + 1);
+  const nextYear = addYearsToDateValue(getTodayValue(), 1);
 
   return {
     color: goalColors[0],
     currentAmount: 0,
-    deadline: nextYear.toISOString().slice(0, 10),
+    deadline: nextYear,
     icon: goalIcons[0],
     name: "",
     targetAmount: 0,

@@ -6,22 +6,22 @@ test.describe("dashboard", () => {
   });
 
   test("renders the summary cards", async ({ page }) => {
-    await expect(page.getByText("Total Income")).toBeVisible();
-    await expect(page.getByText("Total Expenses")).toBeVisible();
-    await expect(page.getByText("Total Saved")).toBeVisible();
-    await expect(page.getByText("Current Balance")).toBeVisible();
+    await expect(page.getByText("Ingresos totales")).toBeVisible();
+    await expect(page.getByText("Gastos totales")).toBeVisible();
+    await expect(page.getByText("Total ahorrado")).toBeVisible();
+    await expect(page.getByText("Saldo disponible")).toBeVisible();
   });
 
   test("navigates through every sidebar section", async ({ page }) => {
     const sections: Array<[name: string, path: string]> = [
-      ["Transactions", "/transactions"],
-      ["Categories", "/categories"],
-      ["Budgets", "/budgets"],
-      ["Payments", "/payments"],
-      ["Reports", "/reports"],
-      ["Goals", "/goals"],
-      ["Settings", "/settings"],
-      ["Overview", "/dashboard"],
+      ["Movimientos", "/transactions"],
+      ["Categorías", "/categories"],
+      ["Presupuestos", "/budgets"],
+      ["Pagos", "/payments"],
+      ["Reportes", "/reports"],
+      ["Metas", "/goals"],
+      ["Configuración", "/settings"],
+      ["Resumen", "/dashboard"],
     ];
 
     for (const [name, path] of sections) {

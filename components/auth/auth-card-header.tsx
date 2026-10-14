@@ -26,7 +26,7 @@ export function AuthCardHeader() {
         </div>
         <div>
           <p className="text-2xl font-bold leading-none tracking-normal">
-            Dragg
+            Kontro
           </p>
           <p className="mt-1 text-xs font-medium uppercase text-green-300">
             {t("auth.kicker")}

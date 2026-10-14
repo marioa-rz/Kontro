@@ -34,7 +34,8 @@ const translations: Record<string, string> = {
   "auth.signInDescription": "Sign in with Google or your email and password.",
   "auth.signInWithEmail": "Sign in with email",
   "auth.signUp": "Sign up",
-  "auth.signUpDescription": "Create an account with your name, email, and password.",
+  "auth.signUpDescription":
+    "Create an account with your name, email, and password.",
   "auth.termsOfUse": "Terms of Use",
   "screen.settings.firstName": "First Name",
   "screen.settings.lastName": "Last Name",
@@ -132,10 +133,10 @@ describe("auth UI", () => {
     expect(html).toContain("Terms of Use");
     expect(html).toContain("Privacy Policy");
     expect(html).toContain(
-      'href="https://github.com/fsousac/Dragg/blob/main/docs/terms-of-use.md"',
+      'href="https://github.com/marioa-rz/Kontro/blob/main/docs/terms-of-use.md"',
     );
     expect(html).toContain(
-      'href="https://github.com/fsousac/Dragg/blob/main/docs/privacy-policy.md"',
+      'href="https://github.com/marioa-rz/Kontro/blob/main/docs/privacy-policy.md"',
     );
     expect(html).toContain(
       "You must accept the Terms of Use and Privacy Policy to create an account.",

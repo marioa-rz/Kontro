@@ -19,13 +19,17 @@ type Translate = (key: string) => string;
 function LandingHeader({ t }: { t: Translate }) {
   return (
     <header className="flex flex-col items-center gap-3 pt-12 pb-6 px-4">
-      <Image
-        src="/dragg-logo-wordmark.svg"
-        alt="Dragg"
-        width={140}
-        height={40}
-        priority
-      />
+      <div className="flex items-center gap-3">
+        <Image
+          src="/dragg-icon.svg"
+          alt=""
+          width={40}
+          height={40}
+          priority
+          aria-hidden="true"
+        />
+        <span className="text-3xl font-bold tracking-tight">Kontro</span>
+      </div>
       <p className="text-foreground/60 text-sm text-center">
         {t("landing.description")}
       </p>
@@ -63,7 +67,7 @@ function LandingFooter({ t }: { t: Translate }) {
   return (
     <footer className="text-center py-8 px-4 text-foreground/40 text-xs">
       <a
-        href="https://github.com/fsousac/Dragg"
+        href="https://github.com/marioa-rz/Kontro"
         target="_blank"
         rel="noopener noreferrer"
         className="underline hover:text-foreground/70 transition-colors"

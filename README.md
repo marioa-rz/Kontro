@@ -1,8 +1,7 @@
 <h1 align="center">
-	<img width="180" src="public/dragg-logo-wordmark.svg" alt="Dragg" />
+	<img width="72" src="public/dragg-icon.svg" alt="Kontro" />
+	<br />Kontro
 </h1>
-
-<h3 align="center">Kontro</h3>
 
 <p align="center">
 	Personal finance, debt, and savings control built with Next.js and Supabase.
@@ -39,7 +38,8 @@ It is designed to be simple to self-host and inexpensive to operate, with Supaba
 - Installment expenses and monthly subscription scheduling through transaction records
 - Categories organized by Needs, Wants, and Savings
 - Category emoji icons and monthly spending limits
-- Payment methods management with protected Pix and Cash defaults
+- Payment methods for bank transfer, cash, credit card, and debit card
+- Guatemala-first defaults: Spanish (`es-GT`), GTQ, local timezone, and localized categories/payment methods
 - Credit card due-day and closing-day support with planned invoice rows
 - Goals screen with create, edit, fund, and delete flows
 - Reports screen with monthly summaries, net worth progression, and export-friendly data
@@ -72,6 +72,7 @@ Set your environment variables in `.env.local`:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
 Apply migrations and start:

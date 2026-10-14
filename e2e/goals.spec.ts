@@ -10,7 +10,7 @@ test("creates a goal, adds funds, and deletes it", async ({ page }) => {
   const createDialog = page.getByRole("dialog");
   await createDialog.locator("#goal-name").fill(goalName);
   await createDialog.locator("#goal-target").pressSequentially("100000");
-  await createDialog.getByRole("button", { name: "Save changes" }).click();
+  await createDialog.getByRole("button", { name: "Guardar cambios" }).click();
 
   await expect(page.getByText("Goal created successfully.")).toBeVisible();
 
@@ -18,10 +18,10 @@ test("creates a goal, adds funds, and deletes it", async ({ page }) => {
   await expect(card).toBeVisible();
 
   // Add funds
-  await card.getByRole("button", { name: "Add funds" }).click();
+  await card.getByRole("button", { name: "Agregar fondos" }).click();
   const fundDialog = page.getByRole("dialog");
   await fundDialog.locator("#goal-fund-amount").pressSequentially("5000");
-  await fundDialog.getByRole("button", { name: "Add funds" }).click();
+  await fundDialog.getByRole("button", { name: "Agregar fondos" }).click();
 
   await expect(page.getByText("Funds added successfully.")).toBeVisible();
 
@@ -30,10 +30,10 @@ test("creates a goal, adds funds, and deletes it", async ({ page }) => {
     .getByRole("button")
     .filter({ has: page.locator("svg.lucide-ellipsis-vertical") })
     .click();
-  await page.getByRole("menuitem", { name: "Delete" }).click();
+  await page.getByRole("menuitem", { name: "Eliminar" }).click();
   await page
     .getByRole("alertdialog")
-    .getByRole("button", { name: "Delete", exact: true })
+    .getByRole("button", { name: "Eliminar", exact: true })
     .click();
 
   await expect(page.getByText("Goal deleted successfully.")).toBeVisible();

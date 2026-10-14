@@ -227,6 +227,7 @@ function CurrencySelectField({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
+          <SelectItem value="GTQ">GTQ (Q)</SelectItem>
           <SelectItem value="BRL">BRL (R$)</SelectItem>
           <SelectItem value="USD">USD ($)</SelectItem>
           <SelectItem value="EUR">EUR (€)</SelectItem>
@@ -250,12 +251,17 @@ function LanguageSelectField({
       <Label>{t("screen.settings.language")}</Label>
       <Select
         value={locale}
-        onValueChange={(value) => setLocale(value === "pt-BR" ? "pt-BR" : "en")}
+        onValueChange={(value) => {
+          if (value === "pt-BR") setLocale("pt-BR");
+          else if (value === "en") setLocale("en");
+          else setLocale("es-GT");
+        }}
       >
         <SelectTrigger>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
+          <SelectItem value="es-GT">Español (Guatemala)</SelectItem>
           <SelectItem value="en">English</SelectItem>
           <SelectItem value="pt-BR">Português</SelectItem>
         </SelectContent>

@@ -1,6 +1,6 @@
 # Architecture
 
-Dragg is a Next.js App Router application backed by Supabase Auth and Supabase Postgres. The current app targets Next.js 16, React 19, Node.js 24, pnpm 10, Tailwind CSS 4, shadcn/ui primitives, Recharts, and Vitest.
+Kontro is a Next.js App Router application backed by Supabase Auth and Supabase Postgres. It uses Dragg as its MIT-licensed foundation and currently targets Next.js 16, React 19, Node.js 24, pnpm 10, Tailwind CSS 4, shadcn/ui primitives, Recharts, and Vitest.
 
 ## Application flow
 
@@ -40,7 +40,7 @@ Dragg is a Next.js App Router application backed by Supabase Auth and Supabase P
 - Categories belong to one authenticated user and are grouped by Needs, Wants, Savings, or Income.
 - Categories can include emoji icons and monthly limits.
 - The dashboard computes the 50/30/20 split from the selected month's income and planned usage.
-- Payment methods belong to one authenticated user. Pix and Cash are protected defaults.
+- Payment methods belong to one authenticated user. Cash-type methods are protected defaults; the legacy Pix type remains supported for migrated data.
 - Credit cards support `credit_limit`, `due_day`, and `closing_day`. Invoice rows are calculated in `lib/finance/credit-card-invoices.ts` for display and planning.
 - Payment method usage is calculated in `lib/finance/payment-method-overview.ts`.
 - Goals are stored separately from transactions and support create, edit, fund, and delete operations.
@@ -53,6 +53,8 @@ Dragg is a Next.js App Router application backed by Supabase Auth and Supabase P
 - Desktop dialogs should use 50vw by 50vh, except the new transaction dialog.
 - Visible strings must use `lib/i18n.tsx`.
 - Currency formatting lives in `lib/i18n/currency.ts` and `lib/i18n-currency.ts`.
+- The default regional context is `es-GT`, GTQ, and `America/Guatemala`. Browser storage reads legacy Dragg preference keys once for upgrade compatibility and writes Kontro keys going forward.
+- Current financial day/month boundaries come from `lib/datetime/guatemala.ts`, so server execution in UTC and clients in other timezones still agree on Kontro's Guatemala business date.
 - Theme, language, toast, Vercel Analytics, and Speed Insights are configured in `app/layout.tsx`.
 
 ## Quality and delivery

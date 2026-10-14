@@ -8,6 +8,7 @@ import { GROUP_COLORS } from "@/lib/finance/group-colors";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { withSelectedMonth } from "./month-route";
+import { getGuatemalaDateValue } from "@/lib/datetime/guatemala";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
@@ -164,7 +165,7 @@ export function TransactionsList({ transactions }: TransactionsListProps) {
   const { formatCurrency, formatDate, t } = useI18n();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getGuatemalaDateValue();
 
   return (
     <Card className="h-fit bg-card border-border card-shadow flex flex-col">

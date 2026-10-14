@@ -1,3 +1,5 @@
+import { getGuatemalaMonthValue } from "@/lib/datetime/guatemala";
+
 export function getMonthFromSearchParams(searchParams: URLSearchParams) {
   const month = searchParams.get("month");
 
@@ -5,8 +7,7 @@ export function getMonthFromSearchParams(searchParams: URLSearchParams) {
 }
 
 export function getCurrentMonthValue() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  return getGuatemalaMonthValue();
 }
 
 export function withSelectedMonth(

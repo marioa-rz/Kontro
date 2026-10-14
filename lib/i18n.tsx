@@ -2,15 +2,20 @@
 
 import * as React from "react";
 
+import { GUATEMALA_TIME_ZONE } from "@/lib/datetime/guatemala";
 import { formatCurrency, isSupportedCurrency } from "@/lib/i18n/currency";
 
-export type Locale = "en" | "pt-BR";
+export type Locale = "es-GT" | "en" | "pt-BR";
 export type Currency = import("@/lib/i18n/currency").CurrencyCode;
 
 type Messages = typeof messages.en;
 
-const localeStorageKey = "dragg-locale";
-const currencyStorageKey = "dragg-currency";
+export { GUATEMALA_TIME_ZONE };
+
+const localeStorageKey = "kontro-locale";
+const currencyStorageKey = "kontro-currency";
+const legacyLocaleStorageKey = "dragg-locale";
+const legacyCurrencyStorageKey = "dragg-currency";
 
 const messages = {
   en: {
@@ -49,6 +54,7 @@ const messages = {
     "auth.nameTooLong": "Name must be 80 characters or fewer.",
     "auth.invalidCredentials": "Email or password is incorrect.",
     "auth.localeEnglish": "English",
+    "auth.localeSpanish": "Spanish (Guatemala)",
     "auth.localePortuguese": "Portuguese",
     "auth.invalidEmail": "Enter a valid email address.",
     "auth.newPassword": "New password",
@@ -321,7 +327,7 @@ const messages = {
       "Needs, wants, and savings — neatly organized.",
     "landing.feature.smartCategories.title": "Smart categories",
     "landing.featuresLabel": "Features",
-    "landing.heading": "Dragg – Personal Finance Dashboard",
+    "landing.heading": "Kontro – Personal Finance Dashboard",
     "landing.license": "MIT License",
     "landing.openSource": "Open source",
     "nav.budgets": "Budgets",
@@ -340,7 +346,7 @@ const messages = {
     "page.goals.description":
       "Set savings goals and follow progress toward your next milestone.",
     "page.more.description":
-      "Access the remaining Dragg tools from the mobile navigation.",
+      "Access the remaining Kontro tools from the mobile navigation.",
     "page.payments.description":
       "Track upcoming bills, recurring payments, and due dates.",
     "page.reports.description":
@@ -530,7 +536,7 @@ const messages = {
     "screen.settings.regional": "Regional Settings",
     "screen.settings.regionalDescription":
       "Configure currency and locale preferences",
-    "screen.settings.appearanceDescription": "Customize how Dragg looks",
+    "screen.settings.appearanceDescription": "Customize how Kontro looks",
     "screen.settings.themeDescription": "Switch between light and dark mode",
     "screen.settings.theme": "Theme",
     "screen.settings.title": "Settings",
@@ -699,6 +705,7 @@ const messages = {
     "auth.nameTooLong": "O nome deve ter no máximo 80 caracteres.",
     "auth.invalidCredentials": "Email ou senha incorretos.",
     "auth.localeEnglish": "Inglês",
+    "auth.localeSpanish": "Espanhol (Guatemala)",
     "auth.localePortuguese": "Português",
     "auth.invalidEmail": "Informe um email válido.",
     "auth.newPassword": "Nova senha",
@@ -972,7 +979,7 @@ const messages = {
       "Necessidades, desejos e poupança — organizados.",
     "landing.feature.smartCategories.title": "Categorias inteligentes",
     "landing.featuresLabel": "Funcionalidades",
-    "landing.heading": "Dragg – Painel de Finanças Pessoais",
+    "landing.heading": "Kontro – Painel de Finanças Pessoais",
     "landing.license": "Licença MIT",
     "landing.openSource": "Open source",
     "nav.budgets": "Orçamentos",
@@ -991,7 +998,7 @@ const messages = {
     "page.goals.description":
       "Defina metas de economia e acompanhe o progresso.",
     "page.more.description":
-      "Acesse as demais ferramentas do Dragg pela navegação mobile.",
+      "Acesse as demais ferramentas do Kontro pela navegação mobile.",
     "page.payments.description":
       "Acompanhe contas futuras, pagamentos recorrentes e vencimentos.",
     "page.reports.description":
@@ -1193,7 +1200,7 @@ const messages = {
     "screen.settings.regional": "Configurações regionais",
     "screen.settings.regionalDescription":
       "Configure moeda e preferências de localidade",
-    "screen.settings.appearanceDescription": "Personalize a aparência do Dragg",
+    "screen.settings.appearanceDescription": "Personalize a aparência do Kontro",
     "screen.settings.themeDescription": "Alterne entre modo claro e escuro",
     "screen.settings.theme": "Tema",
     "screen.settings.title": "Configurações",
@@ -1332,6 +1339,195 @@ const messages = {
   },
 } as const;
 
+const spanishMessages = {
+  ...messages.en,
+  "app.description":
+    "Una aplicación moderna para controlar ingresos, gastos y ahorros con información clara.",
+  "auth.kicker": "Claridad para tus finanzas",
+  "auth.title": "Control simple de tu dinero para decisiones cotidianas.",
+  "auth.description":
+    "Controla tu dinero, presupuestos y metas con una aplicación financiera sencilla y de código abierto.",
+  "auth.footer":
+    "Código abierto. Gratuita para uso personal. Diseñada para dar claridad a tus finanzas.",
+  "auth.termsOfUse": "Términos de uso",
+  "auth.acceptTermsAnd": "y la",
+  "auth.acceptTermsDescription":
+    "Antes de continuar, confirma que aceptas los Términos de uso y la Política de privacidad.",
+  "auth.acceptTermsPrefix": "He leído y acepto los",
+  "auth.acceptTermsRequired":
+    "Debes aceptar los Términos de uso y la Política de privacidad para crear una cuenta.",
+  "auth.acceptTermsSubmit": "Continuar",
+  "auth.acceptTermsTitle": "Acepta nuestros términos",
+  "auth.alreadyHaveAccount": "¿Ya tienes una cuenta? Inicia sesión",
+  "auth.backToSignIn": "Volver al inicio de sesión",
+  "auth.checkYourEmail": "Revisa tu correo para completar el acceso.",
+  "auth.confirmPassword": "Confirmar contraseña",
+  "auth.confirmPasswordRequired": "Confirma tu contraseña.",
+  "auth.continueWithGoogle": "Continuar con Google",
+  "auth.createAccount": "Crear cuenta",
+  "auth.email": "Correo electrónico",
+  "auth.emailRequired": "Ingresa tu correo electrónico.",
+  "auth.firstNameRequired": "Ingresa tu nombre.",
+  "auth.forgotPassword": "¿Olvidaste tu contraseña?",
+  "auth.genericError": "Algo salió mal. Inténtalo de nuevo.",
+  "auth.hidePassword": "Ocultar contraseña",
+  "auth.invalidCredentials": "El correo o la contraseña son incorrectos.",
+  "auth.localeEnglish": "Inglés",
+  "auth.localeSpanish": "Español (Guatemala)",
+  "auth.localePortuguese": "Portugués",
+  "auth.invalidEmail": "Ingresa un correo electrónico válido.",
+  "auth.newPassword": "Nueva contraseña",
+  "auth.orContinueWithEmail": "o continúa con correo electrónico",
+  // eslint-disable-next-line sonarjs/no-hardcoded-passwords -- This is a translated UI label, not a credential.
+  "auth.password": "Contraseña",
+  "auth.passwordMismatch": "Las contraseñas no coinciden.",
+  "auth.privacyPolicy": "Política de privacidad",
+  "auth.resetPassword": "Restablecer contraseña",
+  "auth.showPassword": "Mostrar contraseña",
+  "auth.signIn": "Iniciar sesión",
+  "auth.signInDescription":
+    "Ingresa con Google o con tu correo electrónico y contraseña.",
+  "auth.signInWithEmail": "Iniciar sesión con correo",
+  "auth.signUp": "Crear cuenta",
+  "auth.signUpWithEmail": "Registrarme con correo",
+  "auth.updatePassword": "Actualizar contraseña",
+  "common.comingSoon": "Próximamente",
+  "common.selectMonth": "Seleccionar mes",
+  "common.viewAll": "Ver todo",
+  "common.ofBudget": "del presupuesto",
+  "common.ofTotal": "del total",
+  "common.planned": "Planificado",
+  "common.available": "Disponible",
+  "common.used": "utilizado",
+  "common.active": "activo",
+  "common.addFunds": "Agregar fondos",
+  "common.all": "Todos",
+  "common.allCategories": "Todas las categorías",
+  "common.allTypes": "Todos los tipos",
+  "common.cancel": "Cancelar",
+  "common.required": "Obligatorio",
+  "common.category": "Categoría",
+  "common.change": "Cambiar",
+  "common.complete": "Completo",
+  "common.configure": "Configurar",
+  "common.date": "Fecha",
+  "common.delete": "Eliminar",
+  "common.download": "Descargar",
+  "common.edit": "Editar",
+  "common.enable": "Activar",
+  "common.export": "Exportar",
+  "common.expense": "Gasto",
+  "common.income": "Ingreso",
+  "common.left": "Restante",
+  "common.month": "mes",
+  "common.name": "Nombre",
+  "common.noDataForPeriod": "Aún no hay datos para este período.",
+  "common.next": "Siguiente",
+  "common.onTrack": "Al día",
+  "common.overBudget": "sobre el presupuesto",
+  "common.overdue": "Vencido",
+  "common.pause": "Pausar",
+  "common.paused": "pausado",
+  "common.remaining": "Pendiente",
+  "common.resume": "Reanudar",
+  "common.saving": "Ahorros",
+  "common.spent": "Gastado",
+  "common.type": "Tipo",
+  "common.amount": "Monto",
+  "common.view": "Ver",
+  "common.today": "Hoy",
+  "common.yesterday": "Ayer",
+  "data.group.needs": "Necesidades",
+  "data.group.income": "Ingresos",
+  "data.group.savings": "Ahorros",
+  "data.group.wants": "Deseos",
+  "nav.overview": "Resumen",
+  "nav.transactions": "Movimientos",
+  "nav.categories": "Categorías",
+  "nav.budgets": "Presupuestos",
+  "nav.goals": "Metas",
+  "nav.more": "Más",
+  "nav.payments": "Pagos",
+  "nav.reports": "Reportes",
+  "nav.settings": "Configuración",
+  "dashboard.greeting.afternoon": "Buenas tardes",
+  "dashboard.greeting.evening": "Buenas noches",
+  "dashboard.greeting.fallback": "Te damos la bienvenida",
+  "dashboard.greeting.morning": "Buenos días",
+  "dashboard.headerDescription": "Así están tus finanzas",
+  "dashboard.latestTransactions.description": "Tu actividad reciente",
+  "dashboard.latestTransactions.title": "Últimos movimientos",
+  "dashboard.newTransaction": "Nuevo movimiento",
+  "dashboard.quickActions.addExpense": "Agregar gasto",
+  "dashboard.quickActions.addGoal": "Agregar meta",
+  "dashboard.quickActions.addIncome": "Agregar ingreso",
+  "dashboard.quickActions.createBudget": "Crear presupuesto",
+  "dashboard.quickActions.title": "Acciones rápidas",
+  "dashboard.summary.currentBalance": "Saldo disponible",
+  "dashboard.summary.totalExpenses": "Gastos totales",
+  "dashboard.summary.totalIncome": "Ingresos totales",
+  "dashboard.summary.totalSaved": "Total ahorrado",
+  "screen.transactions.title": "Movimientos",
+  "screen.categories.title": "Categorías",
+  "screen.categories.description": "Organiza tus gastos con categorías",
+  "screen.categories.newCategory": "Nueva categoría",
+  "screen.payments.title": "Pagos y suscripciones",
+  "screen.reports.title": "Reportes",
+  "screen.goals.title": "Metas financieras",
+  "screen.budgets.title": "Presupuestos",
+  "screen.settings.title": "Configuración",
+  "screen.settings.description": "Administra tu cuenta y preferencias",
+  "screen.settings.email": "Correo electrónico",
+  "screen.settings.firstName": "Nombre",
+  "screen.settings.lastName": "Apellido",
+  "screen.settings.appearance": "Apariencia",
+  "screen.settings.appearanceDescription": "Personaliza cómo se ve Kontro",
+  "screen.settings.profile": "Perfil",
+  "screen.settings.profileDescription": "Consulta tu información personal",
+  "screen.settings.language": "Idioma",
+  "screen.settings.currency": "Moneda",
+  "screen.settings.regional": "Configuración regional",
+  "screen.settings.regionalDescription":
+    "Elige el idioma y la moneda que deseas utilizar.",
+  "transaction.addTitle": "Nuevo movimiento",
+  "transaction.addDescription":
+    "Completa los datos para registrar un nuevo movimiento.",
+  "transaction.deleteConfirm": "¿Eliminar este movimiento?",
+  "transaction.deleteDescription": "Esta acción no se puede deshacer.",
+  "transaction.deleteSuccess": "Movimiento eliminado correctamente.",
+  "transaction.deleteError": "No se pudo eliminar el movimiento.",
+  "transaction.detailsTitle": "Detalles del movimiento",
+  "transaction.type": "Tipo",
+  "transaction.typeIncome": "Ingreso",
+  "transaction.typeExpense": "Gasto",
+  "transaction.typeSaving": "Ahorro",
+  "transaction.date": "Fecha",
+  "transaction.amount": "¿Cuánto?",
+  "transaction.category": "Categoría",
+  "transaction.paymentMethod": "Pagado con",
+  "transaction.paymentMethods.creditCard": "Tarjeta de crédito",
+  "transaction.paymentMethods.debitCard": "Tarjeta de débito",
+  "transaction.paymentMethods.cash": "Efectivo",
+  "transaction.paymentMethods.transfer": "Transferencia",
+  "transaction.paymentMethods.bank": "Transferencia bancaria",
+  "transaction.paymentMethods.other": "Otro",
+  "transaction.description": "Descripción",
+  "transaction.descriptionPlaceholder": "Ej.: supermercado, gasolina...",
+  "transaction.saveChanges": "Guardar cambios",
+  "transaction.summary": "Resumen",
+  "transaction.updateSuccess": "Movimiento actualizado correctamente.",
+  "transaction.updateError": "No se pudo actualizar el movimiento.",
+  "theme.toggle": "Cambiar tema",
+  "user.fallback": "Usuario",
+  "user.initialsFallback": "KO",
+  "user.logout": "Cerrar sesión",
+} as const;
+
+const localizedMessages = {
+  ...messages,
+  "es-GT": spanishMessages,
+} as const;
+
 const LocaleContext = React.createContext<{
   currency: Currency;
   formatCurrency: (value: number) => string;
@@ -1346,56 +1542,67 @@ const LocaleContext = React.createContext<{
   t: (key: string) => string;
 } | null>(null);
 
-function resolveLocale(value?: string | null): Locale {
-  return value?.toLowerCase().startsWith("pt") ? "pt-BR" : "en";
+export function resolveLocale(value?: string | null): Locale {
+  const normalized = value?.toLowerCase();
+
+  if (normalized?.startsWith("pt")) return "pt-BR";
+  if (normalized?.startsWith("en")) return "en";
+  return "es-GT";
 }
 
-function resolveCurrency(
+export function resolveCurrency(
   candidate: string | null | undefined,
   locale: Locale,
 ): Currency {
   if (isSupportedCurrency(candidate)) return candidate;
-  return locale === "pt-BR" ? "BRL" : "USD";
+  if (locale === "pt-BR") return "BRL";
+  if (locale === "en") return "USD";
+  return "GTQ";
 }
 
 function readStoredLocalePreferences(): { currency: Currency; locale: Locale } {
-  const storedLocale = window.localStorage.getItem(localeStorageKey);
-  const locale = storedLocale
-    ? resolveLocale(storedLocale)
-    : resolveLocale(window.navigator.language);
-  const storedCurrency = window.localStorage.getItem(currencyStorageKey);
+  const storedLocale =
+    window.localStorage.getItem(localeStorageKey) ??
+    window.localStorage.getItem(legacyLocaleStorageKey);
+  const locale = resolveLocale(storedLocale);
+  const storedCurrency =
+    window.localStorage.getItem(currencyStorageKey) ??
+    window.localStorage.getItem(legacyCurrencyStorageKey);
 
   return { currency: resolveCurrency(storedCurrency, locale), locale };
 }
 
 function translateMessage(locale: Locale, key: string): string {
   return (
-    messages[locale][key as keyof Messages] ??
-    messages[locale][`data.category.${key}` as keyof Messages] ??
-    messages[locale][`data.group.${key}` as keyof Messages] ??
-    messages[locale][`common.${key}` as keyof Messages] ??
+    localizedMessages[locale][key as keyof Messages] ??
+    localizedMessages[locale][`data.category.${key}` as keyof Messages] ??
+    localizedMessages[locale][`data.group.${key}` as keyof Messages] ??
+    localizedMessages[locale][`common.${key}` as keyof Messages] ??
     key
   );
 }
 
-function formatLocalizedDate(
+export function formatLocalizedDate(
   locale: Locale,
   date: string | Date,
   options?: Intl.DateTimeFormatOptions,
 ): string {
   const value =
     typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)
-      ? new Date(`${date}T00:00:00`)
+      ? new Date(`${date}T12:00:00-06:00`)
       : new Date(date);
 
-  return new Intl.DateTimeFormat(locale, options).format(value);
+  return new Intl.DateTimeFormat(locale, {
+    ...options,
+    timeZone: options?.timeZone ?? GUATEMALA_TIME_ZONE,
+  }).format(value);
 }
 
 export function LanguageProvider({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const [locale, setLocaleState] = React.useState<Locale>("en");
-  const [currency, setCurrencyState] = React.useState<Currency>("USD");
+  const [locale, setLocaleState] = React.useState<Locale>("es-GT");
+  const [currency, setCurrencyState] = React.useState<Currency>("GTQ");
 
   React.useEffect(() => {
     const { currency: nextCurrency, locale: nextLocale } =

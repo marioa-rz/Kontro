@@ -20,6 +20,11 @@ import {
   type TransactionType,
 } from "@/lib/data";
 import {
+  addDaysToDateValue,
+  getGuatemalaDateValue,
+  getGuatemalaMonthValue,
+} from "@/lib/datetime/guatemala";
+import {
   calculateBudgetData,
   sumBudgetUsageByGroup,
 } from "@/lib/finance/budget";
@@ -1030,20 +1035,17 @@ function toTransaction(row: TransactionRow): Transaction {
 }
 
 function getCurrentMonthValue() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  return getGuatemalaMonthValue();
 }
 
 function getTodayValue() {
-  return new Date().toISOString().slice(0, 10);
+  return getGuatemalaDateValue();
 }
 
 function getPaymentsDueStatus(dateValue: string, today: string) {
   if (dateValue <= today) return "planned" as const;
 
-  const threshold = new Date(`${today}T00:00:00.000Z`);
-  threshold.setDate(threshold.getDate() + 3);
-  const thresholdValue = threshold.toISOString().slice(0, 10);
+  const thresholdValue = addDaysToDateValue(today, 3);
 
   if (dateValue <= thresholdValue) return "next" as const;
   return "planned" as const;

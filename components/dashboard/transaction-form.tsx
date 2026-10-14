@@ -13,6 +13,7 @@ import { CompactTextarea } from "@/components/dashboard/form-inputs/compact-text
 import { CurrencyInput } from "@/components/dashboard/form-inputs/currency-input";
 import { withSelectedMonth } from "@/components/dashboard/month-route";
 import { Button } from "@/components/ui/button";
+import { getGuatemalaDateValue } from "@/lib/datetime/guatemala";
 import {
   type CreateCategoryInput,
   type TransactionFormCategory,
@@ -702,9 +703,11 @@ function TransactionFormDialogs({
 }
 
 function getTodayValues() {
+  const todayDateInputValue = getGuatemalaDateValue();
+
   return {
-    today: format(new Date(), "dd/MM/yyyy"),
-    todayDateInputValue: format(new Date(), "yyyy-MM-dd"),
+    today: fromDateInputValue(todayDateInputValue),
+    todayDateInputValue,
   };
 }
 

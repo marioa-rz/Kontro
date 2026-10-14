@@ -9,6 +9,10 @@ import {
   CardDescription,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  getGuatemalaDateValue,
+  getGuatemalaMonthValue,
+} from "@/lib/datetime/guatemala";
 
 import {
   XAxis,
@@ -232,10 +236,6 @@ type DailyChartItem = {
   amount: number;
 };
 
-function getMonthKey(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-}
-
 function getDaysInMonth(monthKey: string) {
   const [year, month] = monthKey.split("-").map(Number);
 
@@ -243,11 +243,11 @@ function getDaysInMonth(monthKey: string) {
 }
 
 function getChartEndDay(selectedMonth: string) {
-  const today = new Date();
-  const currentMonth = getMonthKey(today);
+  const today = getGuatemalaDateValue();
+  const currentMonth = today.slice(0, 7);
 
   if (selectedMonth === currentMonth) {
-    return today.getDate();
+    return Number(today.slice(8, 10));
   }
 
   if (selectedMonth < currentMonth) {
@@ -285,7 +285,7 @@ function buildDailyChartData(
         return accumulator;
       }
 
-      const day = new Date(`${expense.date}T00:00:00`).getDate();
+      const day = Number(expense.date.slice(8, 10));
 
       accumulator[day] = (accumulator[day] ?? 0) + expense.amount;
 
@@ -527,12 +527,12 @@ function DailyExpensesSplineChartBody(
 export function DailyExpensesSplineChart({
   dailyExpensesOverTime,
   selectedMonth,
-  currency = "BRL",
-  locale = "pt-BR",
+  currency = "GTQ",
+  locale = "es-GT",
 }: DailyExpensesSplineChartProps) {
   const { t } = useI18n();
   const isMobile = useIsMobile();
-  const monthKey = selectedMonth ?? getMonthKey(new Date());
+  const monthKey = selectedMonth ?? getGuatemalaMonthValue();
   const endDay = getChartEndDay(monthKey);
   const chartData = buildDailyChartData(
     dailyExpensesOverTime,

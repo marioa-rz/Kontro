@@ -143,7 +143,7 @@ function downloadTransactionsCsv(reportsData: ReportsData, t: (key: string) => s
   const url = URL.createObjectURL(blob)
   const link = document.createElement("a")
   link.href = url
-  link.download = `dragg-relatorio-${reportsData.selectedMonth}.csv`
+  link.download = `kontro-reporte-${reportsData.selectedMonth}.csv`
   document.body.appendChild(link)
   link.click()
   link.remove()
@@ -186,7 +186,7 @@ function buildPdfReportText({
   )
 
   return [
-    `Dragg - ${t("screen.reports.title")}`,
+    `Kontro - ${t("screen.reports.title")}`,
     "",
     t("screen.reports.breakdown"),
     ...summaryLines,
@@ -217,7 +217,7 @@ function printPdfReport({
   printWindow.document.write(`
       <html>
         <head>
-          <title>Dragg - ${escapeHtml(t("screen.reports.title"))}</title>
+          <title>Kontro - ${escapeHtml(t("screen.reports.title"))}</title>
           <style>
             body { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; padding: 32px; color: #111; }
             pre { white-space: pre-wrap; line-height: 1.5; font-size: 12px; }

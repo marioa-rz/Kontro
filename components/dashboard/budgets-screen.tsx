@@ -132,7 +132,7 @@ function downloadBudgetCsv({
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `dragg-budget.csv`;
+  link.download = `kontro-presupuesto.csv`;
   document.body.appendChild(link);
   link.click();
   link.remove();

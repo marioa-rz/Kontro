@@ -48,6 +48,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  addDaysToDateValue,
+  getGuatemalaDateValue,
+} from "@/lib/datetime/guatemala";
 import { getSubscriptionMatchKey } from "@/lib/finance/subscriptions";
 import {
   type CreateInvoiceAdvancePaymentInput,
@@ -805,7 +809,7 @@ function buildDefaultSubscriptionForm({
     amount: 0,
     category: categories[0]?.id ?? "none",
     description: "",
-    nextDate: new Date().toISOString().slice(0, 10),
+    nextDate: getGuatemalaDateValue(),
     paymentMethod: transactionPaymentMethods[0]?.id ?? "none",
   };
 }
@@ -846,7 +850,7 @@ function useInvoiceFormState({
   );
   const [invoicePaymentForm, setInvoicePaymentForm] = useState({
     amount: 0,
-    date: new Date().toISOString().slice(0, 10),
+    date: getGuatemalaDateValue(),
     paymentMethod:
       invoicePaymentMethodOptions[0]?.id ??
       transactionPaymentMethods[0]?.id ??
@@ -1388,12 +1392,8 @@ function useDueStatusHelpers({
   t: Translate;
   formatDate: FormatDate;
 }) {
-  const today = new Date().toISOString().slice(0, 10);
-  const dueThreshold = (() => {
-    const threshold = new Date();
-    threshold.setDate(threshold.getDate() + 3);
-    return threshold.toISOString().slice(0, 10);
-  })();
+  const today = getGuatemalaDateValue();
+  const dueThreshold = addDaysToDateValue(today, 3);
 
   const getDueStatusLabel = (status: "planned" | "next") =>
     status === "next" ? t("common.next") : t("common.planned");

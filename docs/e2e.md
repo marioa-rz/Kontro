@@ -1,6 +1,6 @@
 # End-to-End Tests
 
-Dragg uses [Playwright](https://playwright.dev/) for end-to-end (E2E) tests covering the critical user workflows: authentication, transactions, budgets, payments and subscriptions, credit cards and invoices, financial goals, dashboard navigation, theming, and internationalization.
+Kontro uses [Playwright](https://playwright.dev/) for end-to-end (E2E) tests covering the critical user workflows: authentication, transactions, budgets, payments and subscriptions, credit cards and invoices, financial goals, dashboard navigation, theming, and internationalization.
 
 Specs live in `e2e/`. There are no `data-testid` attributes in the app — tests rely on accessible roles, labels, and visible text, matching how a real user (or a screen reader) would interact with the app.
 
