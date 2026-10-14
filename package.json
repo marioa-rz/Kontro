@@ -19,7 +19,7 @@
     "test:coverage": "vitest run --coverage",
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
-    "security:audit": "pnpm audit --audit-level=moderate --ignore-unfixable",
+    "security:audit": "pnpm audit --audit-level=moderate",
     "security:trivy": "trivy fs --scanners vuln,secret,misconfig --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 .",
     "prepare": "husky",
     "update": "pnpm update",

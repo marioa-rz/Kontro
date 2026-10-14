@@ -19,7 +19,7 @@
 		<img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" />
 	</a>
 	<a href="https://github.com/marioa-rz/Kontro/blob/main/package.json">
-		<img src="https://img.shields.io/badge/next-16.3.1-black" alt="Next.js" />
+		<img src="https://img.shields.io/badge/next-16-black" alt="Next.js" />
 	</a>
 	<a href="https://github.com/marioa-rz/Kontro/blob/main/package.json">
 		<img src="https://img.shields.io/badge/react-19-149eca" alt="React" />
