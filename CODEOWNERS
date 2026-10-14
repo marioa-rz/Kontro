@@ -1,8 +1,10 @@
-# Code owners for Dragg
+# Code owners for Kontro
 
-* @fsousac
+* @marioa-rz
 
-.github/ @fsousac
-supabase/ @fsousac
-docs/ @fsousac
-SECURITY.md @fsousac
+.github/ @marioa-rz
+supabase/ @marioa-rz
+docs/ @marioa-rz
+skills/ @marioa-rz
+AGENTS.md @marioa-rz
+SECURITY.md @marioa-rz

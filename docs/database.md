@@ -175,9 +175,11 @@ Apply the SQL files in `supabase/migrations` through the Supabase SQL editor.
 
 ## Security requirements
 
+- Kontro is multi-user but not collaborative: each authenticated user owns a private, independent financial dataset.
 - Keep RLS enabled on exposed user-owned tables.
 - Force RLS where the current migrations force it.
 - Policies should restrict rows by the authenticated user's ID and should be operation-specific when possible.
+- Test every new user-owned table with two authenticated identities and prove that cross-user reads and writes fail.
 - Do not grant broad public write access.
 - Keep unauthenticated `anon` access revoked for user-owned finance data.
 - Do not expose service-role credentials to the application frontend.
