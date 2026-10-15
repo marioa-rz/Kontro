@@ -1,10 +1,11 @@
 "use client";
 
-import { Globe, Palette, User } from "lucide-react";
+import { Globe, LogOut, Palette, User } from "lucide-react";
 
 import { PageHeader } from "@/components/dashboard/page-header";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -158,11 +159,13 @@ function ProfileSettingsCard({
   profile,
   formatDate,
   fallbackValue,
+  signOutAction,
   t,
 }: Readonly<{
   profile: OAuthProfile;
   formatDate: I18n["formatDate"];
   fallbackValue: string;
+  signOutAction: () => Promise<void>;
   t: I18n["t"];
 }>) {
   return (
@@ -179,6 +182,17 @@ function ProfileSettingsCard({
         fallbackValue={fallbackValue}
         t={t}
       />
+      <Separator />
+      <form action={signOutAction}>
+        <Button
+          className="w-full gap-2 sm:w-auto"
+          type="submit"
+          variant="outline"
+        >
+          <LogOut className="size-4" aria-hidden="true" />
+          {t("user.logout")}
+        </Button>
+      </form>
     </SettingsCard>
   );
 }
@@ -290,7 +304,11 @@ function RegionalSettingsCard({
       description={t("screen.settings.regionalDescription")}
     >
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <CurrencySelectField currency={currency} setCurrency={setCurrency} t={t} />
+        <CurrencySelectField
+          currency={currency}
+          setCurrency={setCurrency}
+          t={t}
+        />
         <LanguageSelectField locale={locale} setLocale={setLocale} t={t} />
       </div>
     </SettingsCard>
@@ -299,9 +317,13 @@ function RegionalSettingsCard({
 
 type SettingsScreenProps = {
   readonly profile: OAuthProfile;
+  readonly signOutAction: () => Promise<void>;
 };
 
-export function SettingsScreen({ profile }: SettingsScreenProps) {
+export function SettingsScreen({
+  profile,
+  signOutAction,
+}: SettingsScreenProps) {
   const { currency, formatDate, locale, setCurrency, setLocale, t } = useI18n();
   const fallbackValue = t("settings.notAvailable");
 
@@ -317,6 +339,7 @@ export function SettingsScreen({ profile }: SettingsScreenProps) {
           profile={profile}
           formatDate={formatDate}
           fallbackValue={fallbackValue}
+          signOutAction={signOutAction}
           t={t}
         />
         <AppearanceSettingsCard t={t} />

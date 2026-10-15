@@ -5,6 +5,10 @@ import { BudgetSplitChart } from "@/components/dashboard/budget-split-chart";
 import { SummarySection } from "@/components/dashboard/summary-section";
 import { ExpensesByCategoryChart } from "@/components/dashboard/expenses-by-category-chart";
 import {
+  DashboardLoadingRegion,
+  FinancialSummaryRegion,
+} from "@/components/dashboard/localized-dashboard-regions";
+import {
   DailyExpensesSplineChart,
   ExpensesOverTimeChart,
 } from "@/components/dashboard/expenses-over-time-chart";
@@ -25,7 +29,7 @@ type DashboardPageProps = {
 
 function DashboardContentFallback() {
   return (
-    <div aria-label="Loading dashboard" className="space-y-4 lg:space-y-6">
+    <DashboardLoadingRegion>
       <div className="h-84 animate-pulse rounded-xl border border-border bg-card/70 lg:h-81.5" />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
         {Array.from({ length: 4 }, (_, index) => (
@@ -39,7 +43,7 @@ function DashboardContentFallback() {
         <div className="h-107.5 animate-pulse rounded-xl border border-border bg-card/70" />
         <div className="h-107.5 animate-pulse rounded-xl border border-border bg-card/70 lg:col-span-2" />
       </div>
-    </div>
+    </DashboardLoadingRegion>
   );
 }
 
@@ -103,7 +107,7 @@ async function DashboardContent({
   return (
     <>
       <AnimatedCard index={0} className="mb-6 lg:mb-8">
-        <section aria-label="Financial summary">
+        <FinancialSummaryRegion>
           <SummarySection
             summaryData={dashboardData.summaryData}
             categories={dashboardData.categories}
@@ -111,7 +115,7 @@ async function DashboardContent({
             createCategoryAction={createCategoryAction}
             onSubmit={createTransactionAction}
           />
-        </section>
+        </FinancialSummaryRegion>
       </AnimatedCard>
 
       <DashboardCharts

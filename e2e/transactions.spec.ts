@@ -7,15 +7,15 @@ test("creates, edits, and deletes a transaction", async ({ page }) => {
   await page.goto("/transactions");
 
   // Create
-  await page.getByRole("button", { name: "Add Transaction" }).click();
+  await page.getByRole("button", { name: "Agregar movimiento" }).click();
   const addDialog = page.getByRole("dialog");
   await addDialog.locator("#amount").pressSequentially("5000");
   await addDialog.getByRole("button", { name: /Alimentación/ }).click();
   await addDialog.locator("#description").fill(description);
   await addDialog.getByRole("button", { name: "Efectivo", exact: true }).click();
-  await addDialog.getByRole("button", { name: "Save transaction" }).click();
+  await addDialog.getByRole("button", { name: "Guardar movimiento" }).click();
 
-  await expect(page.getByText("Transaction recorded successfully!")).toBeVisible();
+  await expect(page.getByText("Movimiento registrado correctamente.")).toBeVisible();
   await expect(page.getByText(description, { exact: true })).toBeVisible();
 
   // Edit

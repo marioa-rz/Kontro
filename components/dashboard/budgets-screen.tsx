@@ -97,10 +97,10 @@ function buildBudgetCsvRows({
 
   return [
     [
-      t("data.group.needs").replace(t("data.group.needs"), "Group"),
+      t("export.group"),
       t("common.spent"),
       ...(includePlanned ? [t("common.planned")] : []),
-      "Budget",
+      t("export.budget"),
       "%",
     ],
     ...groups.map((key) => {

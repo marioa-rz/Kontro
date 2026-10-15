@@ -3,7 +3,7 @@
 
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { type SubmitEvent, useState } from "react";
+import { type SubmitEvent, useEffect, useState } from "react";
 
 import { AuthCardHeader } from "@/components/auth/auth-card-header";
 import { GoogleLoginButton } from "@/components/auth/google-login-button";
@@ -119,6 +119,7 @@ type RunSignUpParams = {
   lastName: string;
   password: string;
   router: ReturnType<typeof useRouter>;
+  setAwaitingEmailConfirmation: (isAwaiting: boolean) => void;
   setErrors: (errors: FormErrors) => void;
   setIsLoading: (isLoading: boolean) => void;
   setStatusMessage: (message: string | null) => void;
@@ -132,6 +133,7 @@ async function runSignUp({
   lastName,
   password,
   router,
+  setAwaitingEmailConfirmation,
   setErrors,
   setIsLoading,
   setStatusMessage,
@@ -159,6 +161,7 @@ async function runSignUp({
     return;
   }
 
+  setAwaitingEmailConfirmation(true);
   setStatusMessage(t("auth.checkYourEmail"));
   setIsLoading(false);
 }
@@ -203,6 +206,7 @@ type SubmitAuthFormParams = {
   mode: AuthMode;
   password: string;
   router: ReturnType<typeof useRouter>;
+  setAwaitingEmailConfirmation: (isAwaiting: boolean) => void;
   setErrors: (errors: FormErrors) => void;
   setIsLoading: (isLoading: boolean) => void;
   setStatusMessage: (message: string | null) => void;
@@ -260,11 +264,13 @@ async function submitAuthForm({
   mode,
   password,
   router,
+  setAwaitingEmailConfirmation,
   setErrors,
   setIsLoading,
   setStatusMessage,
   t,
 }: SubmitAuthFormParams) {
+  setAwaitingEmailConfirmation(false);
   setStatusMessage(null);
 
   const isValid = validateAndApplyErrors({
@@ -289,6 +295,7 @@ async function submitAuthForm({
     lastName,
     password,
     router,
+    setAwaitingEmailConfirmation,
     setErrors,
     setIsLoading,
     setStatusMessage,
@@ -671,7 +678,10 @@ function PasswordFormSection({
   errors,
   isLoading,
   isSignUpMode,
-}: Pick<AuthFormBodyProps, "fields" | "errors" | "isLoading" | "isSignUpMode">) {
+}: Pick<
+  AuthFormBodyProps,
+  "fields" | "errors" | "isLoading" | "isSignUpMode"
+>) {
   return (
     <PasswordSection
       acceptedTerms={fields.acceptedTerms}
@@ -701,7 +711,11 @@ function AuthFormBody({
   return (
     <form className="space-y-4" onSubmit={onSubmit}>
       {isSignUpMode ? (
-        <NameFieldsSection fields={fields} errors={errors} isLoading={isLoading} />
+        <NameFieldsSection
+          fields={fields}
+          errors={errors}
+          isLoading={isLoading}
+        />
       ) : null}
 
       <EmailField
@@ -729,6 +743,50 @@ function AuthFormBody({
   );
 }
 
+function useRedirectOnAuthenticatedSession(
+  router: ReturnType<typeof useRouter>,
+  shouldPollForConfirmation: boolean,
+) {
+  useEffect(() => {
+    const supabase = createClient();
+    let hasRedirected = false;
+
+    function redirectToDashboard() {
+      if (hasRedirected) return;
+      hasRedirected = true;
+      router.replace("/dashboard");
+      router.refresh();
+    }
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) return;
+      redirectToDashboard();
+    });
+
+    async function checkSharedCookieSession() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) redirectToDashboard();
+    }
+
+    if (!shouldPollForConfirmation) {
+      return () => subscription.unsubscribe();
+    }
+
+    void checkSharedCookieSession();
+    const interval = window.setInterval(checkSharedCookieSession, 2_000);
+
+    return () => {
+      window.clearInterval(interval);
+      subscription.unsubscribe();
+    };
+  }, [router, shouldPollForConfirmation]);
+}
+
 function useLoginCardController() {
   const router = useRouter();
   const { t } = useI18n();
@@ -737,15 +795,20 @@ function useLoginCardController() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAwaitingEmailConfirmation, setAwaitingEmailConfirmation] =
+    useState(false);
 
   const isResetMode = mode === "reset";
   const isSignUpMode = mode === "signUp";
   const modeCopy = getModeCopy(mode);
 
+  useRedirectOnAuthenticatedSession(router, isAwaitingEmailConfirmation);
+
   function updateMode(nextMode: AuthMode) {
     setMode(nextMode);
     setErrors({});
     setStatusMessage(null);
+    setAwaitingEmailConfirmation(false);
     fields.resetFields();
   }
 
@@ -755,6 +818,7 @@ function useLoginCardController() {
       ...fields,
       mode,
       router,
+      setAwaitingEmailConfirmation,
       setErrors,
       setIsLoading,
       setStatusMessage,

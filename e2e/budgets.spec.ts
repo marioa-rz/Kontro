@@ -11,11 +11,9 @@ test("configures a category budget and sees it reflected on the Budgets page", a
   const dialog = page.getByRole("dialog");
   await dialog.locator("#category-name").fill(categoryName);
   await dialog.locator("#category-limit").pressSequentially("30000");
-  await dialog.getByRole("button", { name: "Create category" }).click();
+  await dialog.getByRole("button", { name: "Crear categoría" }).click();
 
-  await expect(
-    page.getByText("Category created successfully."),
-  ).toBeVisible();
+  await expect(page.getByText("Categoría creada correctamente.")).toBeVisible();
   await expect(page.getByText(categoryName, { exact: true })).toBeVisible();
 
   await page.goto("/budgets");
@@ -23,6 +21,6 @@ test("configures a category budget and sees it reflected on the Budgets page", a
   await expect(
     page.getByRole("heading", { name: "Presupuestos" }),
   ).toBeVisible();
-  await expect(page.getByText("Category Budgets")).toBeVisible();
+  await expect(page.getByText("Presupuestos por categoría")).toBeVisible();
   await expect(page.getByText(categoryName, { exact: true })).toBeVisible();
 });

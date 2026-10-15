@@ -40,3 +40,18 @@ export function formatCurrency(
     maximumFractionDigits: 2,
   }).format(amount);
 }
+
+export function getCurrencySymbol(
+  locale: string,
+  currency: CurrencyCode,
+): string {
+  return (
+    new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      currencyDisplay: "narrowSymbol",
+    })
+      .formatToParts(0)
+      .find((part) => part.type === "currency")?.value ?? currency
+  );
+}

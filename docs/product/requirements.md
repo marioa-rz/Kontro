@@ -40,8 +40,9 @@ This matrix is the product source of truth for the initial discovery. “Partial
 
 - Implemented: Kontro runtime branding, `es-GT` as the default locale, GTQ as the default currency, and `America/Guatemala` as the reporting timezone.
 - Implemented: Guatemala-oriented categories and payment methods for newly created users through migration `011`.
-- Implemented: Spanish authentication, navigation, dashboard, transaction-entry, and settings journeys, with English fallback for untranslated secondary strings.
-- Remaining: complete the Spanish copy review for secondary screens and replace the inherited temporary icon with a final Kontro visual identity.
+- Implemented: complete Spanish (`es-GT`) copy for authentication, navigation, dashboard, transactions, categories, budgets, payments, goals, reports, settings, exports, and accessible daily-spending summaries.
+- Implemented: versioned Spanish Supabase Auth templates for confirmation, recovery, magic-link, invitation, and email-change messages.
+- Remaining: apply the versioned email templates to each hosted Supabase environment and replace the inherited temporary icon with a final Kontro visual identity.
 
 ## Privacy acceptance criteria
 
