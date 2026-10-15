@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
 import {
   formatCurrency,
+  getCurrencySymbol,
   getStoredCurrency,
   isSupportedCurrency,
   setStoredCurrency,
@@ -128,6 +129,20 @@ describe("getStoredCurrency / setStoredCurrency (browser)", () => {
 });
 
 describe("formatCurrency", () => {
+  it("returns the localized symbol used by amount inputs", () => {
+    expect(getCurrencySymbol("es-GT", "GTQ")).toBe("Q");
+    expect(getCurrencySymbol("pt-BR", "BRL")).toBe("R$");
+  });
+
+  it("falls back to the currency code when Intl omits the symbol", () => {
+    const formatToParts = vi
+      .spyOn(Intl.NumberFormat.prototype, "formatToParts")
+      .mockReturnValue([{ type: "integer", value: "0" }]);
+
+    expect(getCurrencySymbol("es-GT", "GTQ")).toBe("GTQ");
+    formatToParts.mockRestore();
+  });
+
   it("formats GTQ with Guatemala locale", () => {
     const result = formatCurrency(2883.03, "es-GT", "GTQ");
     expect(result).toContain("Q");

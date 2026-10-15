@@ -28,6 +28,10 @@ Required production redirect URLs:
 
 The password reset request redirects through `/auth/callback?next=/auth/update-password` so the existing SSR callback can exchange the recovery code and establish the session before the password update form renders.
 
+The login card subscribes to Supabase Auth state changes and, while email confirmation is pending, checks the shared browser cookie written by the server callback. When confirmation opens a session in another tab of the same browser, the original registration tab automatically redirects to `/dashboard`. Confirmation on a different device cannot transfer that device's session; the confirmation link itself still redirects the confirming device into Kontro.
+
+Spanish Auth email templates are versioned under `supabase/templates/` and wired into the local stack through `supabase/config.toml`. Hosted Supabase projects must receive the same subjects and HTML through Authentication -> Email Templates or the Management API because hosted projects do not read local template files.
+
 If sign-up returns HTTP 422, check Supabase Dashboard settings:
 
 - Authentication -> Providers -> Email is enabled

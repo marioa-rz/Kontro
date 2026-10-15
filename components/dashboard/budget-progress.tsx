@@ -21,6 +21,7 @@ import {
   getGuatemalaDateValue,
   getGuatemalaMonthValue,
 } from "@/lib/datetime/guatemala";
+import { useI18n } from "@/lib/i18n";
 
 type DailyExpenseInput = {
   date: string;
@@ -125,6 +126,25 @@ const DAILY_EXPENSES_TOOLTIP_CONTENT_STYLE = {
   color: "hsl(var(--card-foreground))",
 } as const;
 
+function DailyExpensesTooltip({
+  currency,
+  locale,
+}: Readonly<{ currency: string; locale: string }>) {
+  const { t } = useI18n();
+
+  return (
+    <Tooltip
+      cursor={{ strokeDasharray: "3 3" }}
+      formatter={(value) => [
+        formatCurrency(Number(value), locale, currency),
+        t("common.spent"),
+      ]}
+      labelFormatter={(label) => `${t("dashboard.dailyExpenses.day")} ${label}`}
+      contentStyle={DAILY_EXPENSES_TOOLTIP_CONTENT_STYLE}
+    />
+  );
+}
+
 function DailyExpensesAreaChart({
   chartData,
   currency,
@@ -132,7 +152,10 @@ function DailyExpensesAreaChart({
 }: DailyExpensesAreaChartProps) {
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <AreaChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+      <AreaChart
+        data={chartData}
+        margin={{ top: 8, right: 12, left: 0, bottom: 0 }}
+      >
         <DailyExpensesGradientDef />
 
         <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
@@ -156,12 +179,7 @@ function DailyExpensesAreaChart({
           }
         />
 
-        <Tooltip
-          cursor={{ strokeDasharray: "3 3" }}
-          formatter={(value) => [formatCurrency(Number(value), locale, currency), "Spent"]}
-          labelFormatter={(label) => `Day ${label}`}
-          contentStyle={DAILY_EXPENSES_TOOLTIP_CONTENT_STYLE}
-        />
+        <DailyExpensesTooltip currency={currency} locale={locale} />
 
         <Area
           type="monotone"
@@ -191,20 +209,59 @@ function DailyExpensesSummaryFooter({
   locale,
   totalSpent,
 }: DailyExpensesSummaryFooterProps) {
+  const { t } = useI18n();
+
   return (
     <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
       <div className="rounded-lg border border-border bg-muted/30 p-3">
-        <p className="text-xs text-muted-foreground">Spent so far</p>
+        <p className="text-xs text-muted-foreground">
+          {t("dashboard.dailyExpenses.spentSoFar")}
+        </p>
         <p className="font-semibold">
           {formatCurrency(totalSpent, locale, currency)}
         </p>
       </div>
 
       <div className="rounded-lg border border-border bg-muted/30 p-3">
-        <p className="text-xs text-muted-foreground">Days shown</p>
+        <p className="text-xs text-muted-foreground">
+          {t("dashboard.dailyExpenses.daysShown")}
+        </p>
         <p className="font-semibold">{endDay}</p>
       </div>
     </div>
+  );
+}
+
+function DailyExpensesCardHeader({
+  averagePerDay,
+  currency,
+  locale,
+}: Readonly<{
+  averagePerDay: number;
+  currency: string;
+  locale: string;
+}>) {
+  const { t } = useI18n();
+
+  return (
+    <CardHeader>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <CardTitle>{t("dashboard.dailyExpenses.title")}</CardTitle>
+          <CardDescription>
+            {t("dashboard.dailyExpenses.description")}
+          </CardDescription>
+        </div>
+        <div className="text-right">
+          <p className="text-xs text-muted-foreground">
+            {t("dashboard.dailyExpenses.averagePerDay")}
+          </p>
+          <p className="text-sm font-semibold">
+            {formatCurrency(averagePerDay, locale, currency)}
+          </p>
+        </div>
+      </div>
+    </CardHeader>
   );
 }
 
@@ -223,23 +280,11 @@ export function DailyExpensesSplineChart({
 
   return (
     <Card className="h-full">
-      <CardHeader>
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <CardTitle>Daily spending</CardTitle>
-            <CardDescription>
-              Actual expenses by day in the selected month.
-            </CardDescription>
-          </div>
-
-          <div className="text-right">
-            <p className="text-xs text-muted-foreground">Average/day</p>
-            <p className="text-sm font-semibold">
-              {formatCurrency(averagePerDay, locale, currency)}
-            </p>
-          </div>
-        </div>
-      </CardHeader>
+      <DailyExpensesCardHeader
+        averagePerDay={averagePerDay}
+        currency={currency}
+        locale={locale}
+      />
 
       <CardContent>
         <div className="h-72">

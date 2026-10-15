@@ -40,6 +40,7 @@ const translations: Record<string, string> = {
   "common.all": "All",
   "common.cancel": "Cancel",
   "common.category": "Select category",
+  "common.close": "Close",
   "common.date": "Date",
   "common.delete": "Delete",
   "common.edit": "Edit",

@@ -22,6 +22,7 @@ import {
 } from "@/lib/finance/transactions";
 import { NewPaymentMethodDialog } from "@/components/dashboard/new-payment-method-dialog";
 import { useI18n } from "@/lib/i18n";
+import { getCurrencySymbol } from "@/lib/i18n/currency";
 
 export interface TransactionFormData {
   type: "income" | "expense" | "saving";
@@ -98,7 +99,10 @@ function getSubmitButtonClasses(type: TransactionFormData["type"]) {
 
 function useBaseCategoryGroups(categories: TransactionFormCategory[]) {
   const expenseCategories = useMemo(
-    () => categories.filter((category) => category.id !== "none" && category.group !== "income"),
+    () =>
+      categories.filter(
+        (category) => category.id !== "none" && category.group !== "income",
+      ),
     [categories],
   );
   const incomeCategory = useMemo(
@@ -110,7 +114,8 @@ function useBaseCategoryGroups(categories: TransactionFormCategory[]) {
     [expenseCategories],
   );
   const fallbackExpenseCategoryId = expenseCategories[0]?.id ?? "none";
-  const fallbackSavingsCategoryId = savingsCategories[0]?.id ?? fallbackExpenseCategoryId;
+  const fallbackSavingsCategoryId =
+    savingsCategories[0]?.id ?? fallbackExpenseCategoryId;
 
   return {
     expenseCategories,
@@ -128,8 +133,13 @@ function useTransactionFormCategoryData({
   categories: TransactionFormCategory[];
   t: (key: string) => string;
 }) {
-  const { expenseCategories, incomeCategory, savingsCategories, fallbackExpenseCategoryId, fallbackSavingsCategoryId } =
-    useBaseCategoryGroups(categories);
+  const {
+    expenseCategories,
+    incomeCategory,
+    savingsCategories,
+    fallbackExpenseCategoryId,
+    fallbackSavingsCategoryId,
+  } = useBaseCategoryGroups(categories);
 
   const incomeCategoryOption = useMemo(
     () => ({
@@ -145,12 +155,22 @@ function useTransactionFormCategoryData({
     () =>
       [...expenseCategories]
         .sort(compareCategoriesByGroupOrder)
-        .map((category) => ({ value: category.id, label: t(category.label), group: category.group, icon: category.icon })),
+        .map((category) => ({
+          value: category.id,
+          label: t(category.label),
+          group: category.group,
+          icon: category.icon,
+        })),
     [expenseCategories, t],
   );
   const savingsCategoryOptions = useMemo(
     () =>
-      savingsCategories.map((category) => ({ value: category.id, label: t(category.label), group: category.group, icon: category.icon })),
+      savingsCategories.map((category) => ({
+        value: category.id,
+        label: t(category.label),
+        group: category.group,
+        icon: category.icon,
+      })),
     [savingsCategories, t],
   );
   const expenseOnlyCategoryOptions = useMemo(
@@ -173,13 +193,23 @@ function useTransactionFormCategoryData({
 
 const TRANSACTION_CATEGORY_GROUP_ORDER = { needs: 0, wants: 1, savings: 2 };
 
-function compareCategoriesByGroupOrder(left: { group: string }, right: { group: string }) {
+function compareCategoriesByGroupOrder(
+  left: { group: string },
+  right: { group: string },
+) {
   const order = TRANSACTION_CATEGORY_GROUP_ORDER as Record<string, number>;
   return order[left.group] - order[right.group];
 }
 
-function canUseInstallments(paymentMethod: TransactionFormPaymentMethod | undefined, label: string) {
-  return paymentMethod?.type === "credit" || paymentMethod?.type === "boleto" || label.includes("boleto");
+function canUseInstallments(
+  paymentMethod: TransactionFormPaymentMethod | undefined,
+  label: string,
+) {
+  return (
+    paymentMethod?.type === "credit" ||
+    paymentMethod?.type === "boleto" ||
+    label.includes("boleto")
+  );
 }
 
 function useTransactionFormTypeSyncEffect({
@@ -205,11 +235,15 @@ function useTransactionFormTypeSyncEffect({
       if (currentFormData.type === "income") {
         category = incomeCategoryId;
       } else if (currentFormData.type === "saving") {
-        category = savingsCategories.some((c) => c.id === currentFormData.category)
+        category = savingsCategories.some(
+          (c) => c.id === currentFormData.category,
+        )
           ? currentFormData.category
           : fallbackSavingsCategoryId;
       } else {
-        category = expenseCategories.some((c) => c.id === currentFormData.category)
+        category = expenseCategories.some(
+          (c) => c.id === currentFormData.category,
+        )
           ? currentFormData.category
           : fallbackExpenseCategoryId;
       }
@@ -218,7 +252,9 @@ function useTransactionFormTypeSyncEffect({
         ...currentFormData,
         category,
         paymentMethod:
-          currentFormData.paymentMethod !== "none" ? currentFormData.paymentMethod : (paymentMethods[0]?.id ?? "none"),
+          currentFormData.paymentMethod !== "none"
+            ? currentFormData.paymentMethod
+            : (paymentMethods[0]?.id ?? "none"),
       };
     });
   }, [
@@ -232,14 +268,19 @@ function useTransactionFormTypeSyncEffect({
   ]);
 }
 
-function validateTransactionForm(formData: TransactionFormData, t: (key: string) => string) {
+function validateTransactionForm(
+  formData: TransactionFormData,
+  t: (key: string) => string,
+) {
   const newErrors: Partial<Record<keyof TransactionFormData, string>> = {};
   const parsedDate = parseDateValue(formData.date);
 
-  if (!formData.date || !isValid(parsedDate)) newErrors.date = t("common.required");
+  if (!formData.date || !isValid(parsedDate))
+    newErrors.date = t("common.required");
   if (formData.amount <= 0) newErrors.amount = t("common.required");
   if (!formData.paymentMethod) newErrors.paymentMethod = t("common.required");
-  if (!formData.description?.trim()) newErrors.description = t("common.required");
+  if (!formData.description?.trim())
+    newErrors.description = t("common.required");
 
   return newErrors;
 }
@@ -247,7 +288,9 @@ function validateTransactionForm(formData: TransactionFormData, t: (key: string)
 type TransactionFormSubmitHandlersParams = {
   formData: TransactionFormData;
   setFormData: React.Dispatch<React.SetStateAction<TransactionFormData>>;
-  setErrors: React.Dispatch<React.SetStateAction<Partial<Record<keyof TransactionFormData, string>>>>;
+  setErrors: React.Dispatch<
+    React.SetStateAction<Partial<Record<keyof TransactionFormData, string>>>
+  >;
   today: string;
   fallbackExpenseCategoryId: string;
   paymentMethods: TransactionFormPaymentMethod[];
@@ -316,15 +359,25 @@ function usePaymentMethodInstallmentEligibility({
   paymentMethods: TransactionFormPaymentMethod[];
   t: (key: string) => string;
 }) {
-  const selectedPaymentMethod = paymentMethods.find((pm) => pm.id === formData.paymentMethod);
-  const selectedPaymentMethodLabel = selectedPaymentMethod ? t(selectedPaymentMethod.label).toLowerCase() : "";
+  const selectedPaymentMethod = paymentMethods.find(
+    (pm) => pm.id === formData.paymentMethod,
+  );
+  const selectedPaymentMethodLabel = selectedPaymentMethod
+    ? t(selectedPaymentMethod.label).toLowerCase()
+    : "";
   const canInstallment =
-    formData.type === "expense" && canUseInstallments(selectedPaymentMethod, selectedPaymentMethodLabel);
+    formData.type === "expense" &&
+    canUseInstallments(selectedPaymentMethod, selectedPaymentMethodLabel);
 
   const handlePaymentMethodChange = (value: string) => {
     const nextPaymentMethod = paymentMethods.find((pm) => pm.id === value);
-    const nextPaymentMethodLabel = nextPaymentMethod ? t(nextPaymentMethod.label).toLowerCase() : "";
-    const nextCanInstallment = canUseInstallments(nextPaymentMethod, nextPaymentMethodLabel);
+    const nextPaymentMethodLabel = nextPaymentMethod
+      ? t(nextPaymentMethod.label).toLowerCase()
+      : "";
+    const nextCanInstallment = canUseInstallments(
+      nextPaymentMethod,
+      nextPaymentMethodLabel,
+    );
 
     setFormData({
       ...formData,
@@ -338,14 +391,20 @@ function usePaymentMethodInstallmentEligibility({
 
 const INSTALLMENT_COUNTS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 24];
 
-const SECTION_LABEL_CLASS = "mb-2.5 block text-xs font-medium uppercase tracking-widest text-muted-foreground";
-const CHIP_BASE_CLASS = "flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-200 cursor-pointer max-w-full";
-const CHIP_ADD_ACTION_CLASS = "border-dashed border-border/40 text-foreground/50 hover:border-border/60 hover:text-foreground/70";
+const SECTION_LABEL_CLASS =
+  "mb-2.5 block text-xs font-medium uppercase tracking-widest text-muted-foreground";
+const CHIP_BASE_CLASS =
+  "flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-200 cursor-pointer max-w-full";
+const CHIP_ADD_ACTION_CLASS =
+  "border-dashed border-border/40 text-foreground/50 hover:border-border/60 hover:text-foreground/70";
 
 function getInstallmentOptions(t: (key: string) => string) {
   return [
     { value: "1", label: t("transaction.installmentOption.full") },
-    ...INSTALLMENT_COUNTS.map((count) => ({ value: String(count), label: `${count}x` })),
+    ...INSTALLMENT_COUNTS.map((count) => ({
+      value: String(count),
+      label: `${count}x`,
+    })),
   ];
 }
 
@@ -357,19 +416,32 @@ function getDisplayedCategoryOptions({
   categoryOptions,
 }: {
   type: TransactionFormData["type"];
-  expenseOnlyCategoryOptions: ReturnType<typeof useTransactionFormCategoryData>["expenseOnlyCategoryOptions"];
-  incomeCategoryOption: ReturnType<typeof useTransactionFormCategoryData>["incomeCategoryOption"];
-  savingsCategoryOptions: ReturnType<typeof useTransactionFormCategoryData>["savingsCategoryOptions"];
-  categoryOptions: ReturnType<typeof useTransactionFormCategoryData>["categoryOptions"];
+  expenseOnlyCategoryOptions: ReturnType<
+    typeof useTransactionFormCategoryData
+  >["expenseOnlyCategoryOptions"];
+  incomeCategoryOption: ReturnType<
+    typeof useTransactionFormCategoryData
+  >["incomeCategoryOption"];
+  savingsCategoryOptions: ReturnType<
+    typeof useTransactionFormCategoryData
+  >["savingsCategoryOptions"];
+  categoryOptions: ReturnType<
+    typeof useTransactionFormCategoryData
+  >["categoryOptions"];
 }) {
   if (type === "income") return [incomeCategoryOption];
-  if (type === "saving") return savingsCategoryOptions.length > 0 ? savingsCategoryOptions : categoryOptions;
+  if (type === "saving")
+    return savingsCategoryOptions.length > 0
+      ? savingsCategoryOptions
+      : categoryOptions;
   return expenseOnlyCategoryOptions;
 }
 
 type TransactionFormFieldProps = {
   readonly formData: TransactionFormData;
-  readonly setFormData: React.Dispatch<React.SetStateAction<TransactionFormData>>;
+  readonly setFormData: React.Dispatch<
+    React.SetStateAction<TransactionFormData>
+  >;
 };
 
 type TransactionTypeSelectorProps = TransactionFormFieldProps & {
@@ -380,7 +452,10 @@ type TransactionTypeSelectorProps = TransactionFormFieldProps & {
   readonly t: (key: string) => string;
 };
 
-const TRANSACTION_TYPE_ACTIVE_CLASS: Record<TransactionFormData["type"], string> = {
+const TRANSACTION_TYPE_ACTIVE_CLASS: Record<
+  TransactionFormData["type"],
+  string
+> = {
   expense: "bg-red-500/20 border border-red-500/40 text-red-400 shadow-sm",
   income: "bg-green-500/20 border border-green-500/40 text-green-400 shadow-sm",
   saving: "bg-blue-500/20 border border-blue-500/40 text-blue-400 shadow-sm",
@@ -402,7 +477,12 @@ function getTransactionTypeButtonConfigs({
         : fallbackExpenseCategoryId,
       installmentCount: formData.installmentCount,
     },
-    { type: "income" as const, labelKey: "transaction.typeIncome", category: incomeCategoryId, installmentCount: 1 },
+    {
+      type: "income" as const,
+      labelKey: "transaction.typeIncome",
+      category: incomeCategoryId,
+      installmentCount: 1,
+    },
     {
       type: "saving" as const,
       labelKey: "transaction.typeSaving",
@@ -444,16 +524,29 @@ function TransactionTypeSelector(props: TransactionTypeSelectorProps) {
 }
 
 type TransactionAmountSectionProps = TransactionFormFieldProps & {
+  readonly currencySymbol: string;
   readonly error: string | undefined;
   readonly t: (key: string) => string;
 };
 
-function TransactionAmountSection({ formData, setFormData, error, t }: TransactionAmountSectionProps) {
+function TransactionAmountSection({
+  currencySymbol,
+  formData,
+  setFormData,
+  error,
+  t,
+}: TransactionAmountSectionProps) {
   return (
     <div className="rounded-xl border border-border/40 bg-card px-4 py-5">
-      <p className="mb-3 text-center text-sm text-muted-foreground">{t("transaction.amount")}</p>
+      <p className="mb-3 text-center text-sm text-muted-foreground">
+        {t("transaction.amount")}
+      </p>
       <div className="flex items-center justify-center align-middle gap-1.5 mx-2">
-        <span className={`text-md font-semibold pt-1.5 ${getAmountColorClass(formData.type)}`}>R$</span>
+        <span
+          className={`text-md font-semibold pt-1.5 ${getAmountColorClass(formData.type)}`}
+        >
+          {currencySymbol}
+        </span>
         <CurrencyInput
           id="amount"
           label={t("transaction.amount")}
@@ -464,13 +557,17 @@ function TransactionAmountSection({ formData, setFormData, error, t }: Transacti
           inputClassName="w-fill border-0 bg-transparent p-0 text-center !text-3xl font-bold tabular-nums shadow-none placeholder:text-foreground/25 focus-visible:ring-0"
         />
       </div>
-      {error && <p className="mt-2 text-center text-xs text-destructive">{error}</p>}
+      {error && (
+        <p className="mt-2 text-center text-xs text-destructive">{error}</p>
+      )}
     </div>
   );
 }
 
 type TransactionCategoryChipsProps = TransactionFormFieldProps & {
-  readonly displayedCategoryOptions: ReturnType<typeof getDisplayedCategoryOptions>;
+  readonly displayedCategoryOptions: ReturnType<
+    typeof getDisplayedCategoryOptions
+  >;
   readonly createCategoryAction?: (data: CreateCategoryInput) => Promise<void>;
   readonly setIsCategoryDialogOpen: (open: boolean) => void;
   readonly router: ReturnType<typeof useRouter>;
@@ -498,10 +595,14 @@ function TransactionCategoryChips({
             <button
               key={option.value}
               type="button"
-              onClick={() => setFormData({ ...formData, category: option.value })}
+              onClick={() =>
+                setFormData({ ...formData, category: option.value })
+              }
               className={`${CHIP_BASE_CLASS} ${getCategoryChipClass(option.group, isSelected)}`}
             >
-              {option.icon && <span className="text-sm leading-none">{option.icon}</span>}
+              {option.icon && (
+                <span className="text-sm leading-none">{option.icon}</span>
+              )}
               <span>{option.label}</span>
             </button>
           );
@@ -512,7 +613,8 @@ function TransactionCategoryChips({
             onClick={
               createCategoryAction
                 ? () => setIsCategoryDialogOpen(true)
-                : () => router.push(withSelectedMonth("/categories", searchParams))
+                : () =>
+                    router.push(withSelectedMonth("/categories", searchParams))
             }
             className={`${CHIP_BASE_CLASS} ${CHIP_ADD_ACTION_CLASS}`}
           >
@@ -530,7 +632,9 @@ type TransactionPaymentMethodChipsProps = {
   readonly paymentMethods: TransactionFormPaymentMethod[];
   readonly handlePaymentMethodChange: (value: string) => void;
   readonly error: string | undefined;
-  readonly createPaymentMethodAction?: (data: CreatePaymentMethodInput) => Promise<void>;
+  readonly createPaymentMethodAction?: (
+    data: CreatePaymentMethodInput,
+  ) => Promise<void>;
   readonly setIsPaymentDialogOpen: (open: boolean) => void;
   readonly router: ReturnType<typeof useRouter>;
   readonly searchParams: ReturnType<typeof useSearchParams>;
@@ -550,7 +654,9 @@ function TransactionPaymentMethodChips({
 }: TransactionPaymentMethodChipsProps) {
   return (
     <div>
-      <span className={SECTION_LABEL_CLASS}>{t("transaction.paymentMethod")}</span>
+      <span className={SECTION_LABEL_CLASS}>
+        {t("transaction.paymentMethod")}
+      </span>
       <div className="flex flex-wrap gap-2 min-w-0 max-w-full">
         {paymentMethods.map((pm) => (
           <button
@@ -610,7 +716,12 @@ function TransactionDateAndInstallments({
         inputMode="text"
         placeholder="dd/MM/yyyy"
         value={toDateInputValue(formData.date) || todayDateInputValue}
-        onChange={(event) => setFormData({ ...formData, date: fromDateInputValue(event.target.value) })}
+        onChange={(event) =>
+          setFormData({
+            ...formData,
+            date: fromDateInputValue(event.target.value),
+          })
+        }
         icon={<Calendar className="w-4 h-4" />}
         error={error}
         inputClassName="w-full max-w-full min-w-0 appearance-none overflow-hidden pr-3 text-left [&::-webkit-calendar-picker-indicator]:shrink-0 [&::-webkit-date-and-time-value]:min-w-0 [&::-webkit-date-and-time-value]:overflow-hidden [&::-webkit-date-and-time-value]:text-left"
@@ -620,7 +731,12 @@ function TransactionDateAndInstallments({
           label={t("transaction.installmentFrequency")}
           id="installment"
           value={formData.installmentCount.toString()}
-          onChange={(value) => setFormData({ ...formData, installmentCount: Number.parseInt(value, 10) })}
+          onChange={(value) =>
+            setFormData({
+              ...formData,
+              installmentCount: Number.parseInt(value, 10),
+            })
+          }
           options={installmentOptions}
         />
       ) : null}
@@ -634,7 +750,11 @@ type TransactionSubmitButtonProps = {
   readonly t: (key: string) => string;
 };
 
-function TransactionSubmitButton({ isLoading, type, t }: TransactionSubmitButtonProps) {
+function TransactionSubmitButton({
+  isLoading,
+  type,
+  t,
+}: TransactionSubmitButtonProps) {
   return (
     <Button
       type="submit"
@@ -667,7 +787,9 @@ type TransactionFormDialogsProps = {
   readonly createCategoryAction?: (data: CreateCategoryInput) => Promise<void>;
   readonly isCategoryDialogOpen: boolean;
   readonly setIsCategoryDialogOpen: (open: boolean) => void;
-  readonly createPaymentMethodAction?: (data: CreatePaymentMethodInput) => Promise<void>;
+  readonly createPaymentMethodAction?: (
+    data: CreatePaymentMethodInput,
+  ) => Promise<void>;
   readonly isPaymentDialogOpen: boolean;
   readonly setIsPaymentDialogOpen: (open: boolean) => void;
 };
@@ -730,17 +852,22 @@ function useTransactionFormBaseState({
   categories,
   paymentMethods,
 }: Pick<TransactionFormProps, "categories" | "paymentMethods">) {
-  const { t } = useI18n();
+  const { currency = "GTQ", locale = "es-GT", t } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { today, todayDateInputValue } = getTodayValues();
 
-  const [errors, setErrors] = useState<Partial<Record<keyof TransactionFormData, string>>>({});
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof TransactionFormData, string>>
+  >({});
   const [formData, setFormData] = useState<TransactionFormData>({
     type: "expense",
     date: today,
     amount: 0,
-    category: categories.find((category) => category.id !== "none" && category.group !== "income")?.id ?? "none",
+    category:
+      categories.find(
+        (category) => category.id !== "none" && category.group !== "income",
+      )?.id ?? "none",
     paymentMethod: paymentMethods[0]?.id ?? "none",
     installmentCount: 1,
     description: "",
@@ -758,6 +885,7 @@ function useTransactionFormBaseState({
   });
 
   return {
+    currencySymbol: getCurrencySymbol(locale, currency),
     t,
     router,
     searchParams,
@@ -784,7 +912,16 @@ function useTransactionFormHandlers({
   paymentMethods: TransactionFormPaymentMethod[];
   onSubmit: (data: TransactionFormData) => Promise<void>;
 }) {
-  const { formData, setFormData, setErrors, today, fallbackExpenseCategoryId, t, router, setIsLoading } = base;
+  const {
+    formData,
+    setFormData,
+    setErrors,
+    today,
+    fallbackExpenseCategoryId,
+    t,
+    router,
+    setIsLoading,
+  } = base;
 
   useTransactionFormTypeSyncEffect({
     setFormData,
@@ -809,14 +946,20 @@ function useTransactionFormHandlers({
     t,
   });
 
-  const { canInstallment, handlePaymentMethodChange } = usePaymentMethodInstallmentEligibility({
-    formData,
-    setFormData,
-    paymentMethods,
-    t,
-  });
+  const { canInstallment, handlePaymentMethodChange } =
+    usePaymentMethodInstallmentEligibility({
+      formData,
+      setFormData,
+      paymentMethods,
+      t,
+    });
 
-  return { handleSubmit, canInstallment, handlePaymentMethodChange, installmentOptions: getInstallmentOptions(t) };
+  return {
+    handleSubmit,
+    canInstallment,
+    handlePaymentMethodChange,
+    installmentOptions: getInstallmentOptions(t),
+  };
 }
 
 function useTransactionFormState({
@@ -825,7 +968,11 @@ function useTransactionFormState({
   onSubmit,
 }: Pick<TransactionFormProps, "categories" | "paymentMethods" | "onSubmit">) {
   const base = useTransactionFormBaseState({ categories, paymentMethods });
-  const handlers = useTransactionFormHandlers({ base, paymentMethods, onSubmit });
+  const handlers = useTransactionFormHandlers({
+    base,
+    paymentMethods,
+    onSubmit,
+  });
 
   return { ...base, ...handlers, paymentMethods };
 }
@@ -850,7 +997,9 @@ function TransactionDescriptionAndNotesFields({
         inputMode="text"
         placeholder={t("transaction.descriptionPlaceholder")}
         value={formData.description}
-        onChange={(event) => setFormData({ ...formData, description: event.target.value })}
+        onChange={(event) =>
+          setFormData({ ...formData, description: event.target.value })
+        }
         icon={<Tag className="w-4 h-4" />}
         error={errors.description}
       />
@@ -858,7 +1007,9 @@ function TransactionDescriptionAndNotesFields({
         label={t("transaction.notes")}
         id="notes"
         value={formData.notes || ""}
-        onChange={(event) => setFormData({ ...formData, notes: event.target.value })}
+        onChange={(event) =>
+          setFormData({ ...formData, notes: event.target.value })
+        }
         placeholder={t("transaction.notesPlaceholder")}
         icon={<FileText className="w-4 h-4" />}
       />
@@ -866,8 +1017,18 @@ function TransactionDescriptionAndNotesFields({
   );
 }
 
-function TransactionFormView(props: TransactionFormProps & TransactionFormState) {
-  const { formData, setFormData, errors, handleSubmit, isLoading, t, displayedCategoryOptions } = props;
+function TransactionFormView(
+  props: TransactionFormProps & TransactionFormState,
+) {
+  const {
+    formData,
+    setFormData,
+    errors,
+    handleSubmit,
+    isLoading,
+    t,
+    displayedCategoryOptions,
+  } = props;
 
   return (
     <div className="w-full min-w-0">
@@ -877,17 +1038,32 @@ function TransactionFormView(props: TransactionFormProps & TransactionFormState)
 
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-x-6 lg:gap-y-5 min-w-0">
           <div className="flex flex-col gap-5 min-w-0">
-            <TransactionCategoryChips {...props} displayedCategoryOptions={displayedCategoryOptions} />
+            <TransactionCategoryChips
+              {...props}
+              displayedCategoryOptions={displayedCategoryOptions}
+            />
           </div>
 
           <div className="flex flex-col gap-5 min-w-0">
-            <TransactionDescriptionAndNotesFields formData={formData} setFormData={setFormData} errors={errors} t={t} />
-            <TransactionPaymentMethodChips {...props} error={errors.paymentMethod} />
+            <TransactionDescriptionAndNotesFields
+              formData={formData}
+              setFormData={setFormData}
+              errors={errors}
+              t={t}
+            />
+            <TransactionPaymentMethodChips
+              {...props}
+              error={errors.paymentMethod}
+            />
             <TransactionDateAndInstallments {...props} error={errors.date} />
           </div>
         </div>
 
-        <TransactionSubmitButton isLoading={isLoading} type={formData.type} t={t} />
+        <TransactionSubmitButton
+          isLoading={isLoading}
+          type={formData.type}
+          t={t}
+        />
       </form>
 
       <TransactionFormDialogs {...props} />

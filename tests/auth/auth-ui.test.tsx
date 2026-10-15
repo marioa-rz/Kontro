@@ -1,5 +1,12 @@
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getSafeRedirectPath } from "@/lib/auth/redirect";
 import { LoginCard } from "@/components/auth/login-card";
@@ -36,6 +43,8 @@ const translations: Record<string, string> = {
   "auth.signUp": "Sign up",
   "auth.signUpDescription":
     "Create an account with your name, email, and password.",
+  "auth.signUpWithEmail": "Sign up with email",
+  "auth.alreadyHaveAccount": "Already have an account? Sign in",
   "auth.termsOfUse": "Terms of Use",
   "screen.settings.firstName": "First Name",
   "screen.settings.lastName": "Last Name",
@@ -44,20 +53,34 @@ const translations: Record<string, string> = {
   "screen.settings.language": "Language",
 };
 
+const replace = vi.fn();
+const refresh = vi.fn();
+const unsubscribe = vi.fn();
+const getUser = vi.fn();
+const signUp = vi.fn();
+let authStateListener:
+  | ((event: string, session: { user: { id: string } } | null) => void)
+  | undefined;
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
-    refresh: vi.fn(),
-    replace: vi.fn(),
+    refresh,
+    replace,
   }),
 }));
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
     auth: {
+      getUser,
+      onAuthStateChange: vi.fn((listener) => {
+        authStateListener = listener;
+        return { data: { subscription: { unsubscribe } } };
+      }),
       resetPasswordForEmail: vi.fn(),
       signInWithOAuth: vi.fn(),
       signInWithPassword: vi.fn(),
-      signUp: vi.fn(),
+      signUp,
       updateUser: vi.fn(),
     },
   }),
@@ -94,6 +117,75 @@ describe("auth callback redirect safety", () => {
 });
 
 describe("auth UI", () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        disconnect() {}
+        observe() {}
+        unobserve() {}
+      },
+    );
+    authStateListener = undefined;
+    getUser.mockReset().mockResolvedValue({
+      data: { user: null },
+      error: null,
+    });
+    signUp.mockReset().mockResolvedValue({
+      data: { session: null },
+      error: null,
+    });
+    refresh.mockClear();
+    replace.mockClear();
+    unsubscribe.mockClear();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("redirects the pending sign-up screen when email confirmation creates a session", () => {
+    render(<LoginCard />);
+
+    act(() => {
+      authStateListener?.("SIGNED_IN", { user: { id: "user-1" } });
+    });
+
+    expect(replace).toHaveBeenCalledWith("/dashboard");
+    expect(refresh).toHaveBeenCalledOnce();
+  });
+
+  it("detects the server-created confirmation cookie while the sign-up tab remains open", async () => {
+    getUser.mockResolvedValue({
+      data: { user: { id: "confirmed-user" } },
+      error: null,
+    });
+    render(<LoginCard />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
+    fireEvent.change(screen.getByLabelText("First Name"), {
+      target: { value: "María" },
+    });
+    fireEvent.change(screen.getByLabelText("Last Name"), {
+      target: { value: "López" },
+    });
+    fireEvent.change(screen.getByLabelText("Email"), {
+      target: { value: "maria@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "Strong1!" },
+    });
+    fireEvent.change(screen.getByLabelText("Confirm password"), {
+      target: { value: "Strong1!" },
+    });
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByRole("button", { name: "Sign up with email" }));
+
+    await waitFor(() => expect(getUser).toHaveBeenCalled());
+    expect(replace).toHaveBeenCalledWith("/dashboard");
+    expect(refresh).toHaveBeenCalledOnce();
+  });
+
   it("renders Google and email/password sign-in options", () => {
     const html = renderToStaticMarkup(<LoginCard />);
 

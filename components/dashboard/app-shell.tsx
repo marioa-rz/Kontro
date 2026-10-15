@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { signOutAction } from "@/app/auth/actions";
 import { Header } from "@/components/dashboard/header";
 import { MobileNav } from "@/components/dashboard/mobile-nav";
 import { NavigationPrefetcher } from "@/components/dashboard/navigation-prefetcher";
@@ -179,14 +180,6 @@ function resolveDisplayIdentity(
   return { userEmail, userName, initials, avatarUrl };
 }
 
-async function signOut() {
-  "use server";
-
-  const supabase = await createClient();
-  await supabase.auth.signOut();
-  redirect("/");
-}
-
 export async function AppShell({
   children,
   userContext,
@@ -215,7 +208,7 @@ export async function AppShell({
 
       <Sidebar
         initials={initials}
-        signOutAction={signOut}
+        signOutAction={signOutAction}
         userAvatarUrl={avatarUrl}
         userEmail={userEmail}
         userName={userName}

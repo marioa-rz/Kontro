@@ -5,6 +5,10 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { TransactionsScreen } from "@/components/dashboard/transactions-screen";
 import { type Transaction } from "@/lib/data";
 import {
+  addDaysToDateValue,
+  getGuatemalaDateValue,
+} from "@/lib/datetime/guatemala";
+import {
   type TransactionFormCategory,
   type TransactionFormPaymentMethod,
 } from "@/lib/finance/transactions";
@@ -65,8 +69,8 @@ vi.mock("@/lib/i18n", () => ({
   }),
 }));
 
-const today = new Date().toISOString().slice(0, 10);
-const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+const today = getGuatemalaDateValue();
+const yesterday = addDaysToDateValue(today, -1);
 
 const categories: TransactionFormCategory[] = [
   {
@@ -100,7 +104,11 @@ const categories: TransactionFormCategory[] = [
 ];
 
 const paymentMethods: TransactionFormPaymentMethod[] = [
-  { id: "pm-1", label: "transaction.paymentMethods.creditCard", type: "credit_card" },
+  {
+    id: "pm-1",
+    label: "transaction.paymentMethods.creditCard",
+    type: "credit_card",
+  },
 ];
 
 function makeTransaction(
@@ -200,7 +208,12 @@ function renderScreen(overrides: Partial<ScreenProps> = {}) {
       nextInvoiceTransactions={[]}
       paymentMethods={paymentMethods}
       previewInstallmentPrepaymentAction={() =>
-        Promise.resolve({ count: 0, installments: [], targetMonth: "2026-07", totalAmount: 0 })
+        Promise.resolve({
+          count: 0,
+          installments: [],
+          targetMonth: "2026-07",
+          totalAmount: 0,
+        })
       }
       showNextInvoice={false}
       showPrevious={false}
@@ -214,9 +227,7 @@ function renderScreen(overrides: Partial<ScreenProps> = {}) {
 describe("TransactionsScreen list rendering", () => {
   it("renders summary chips and all in-month transactions, excluding out-of-month invoice purchases", () => {
     const { container } = renderScreen();
-    const summaryChips = within(
-      container.querySelector(".grid.grid-cols-2")!,
-    );
+    const summaryChips = within(container.querySelector(".grid.grid-cols-2")!);
 
     expect(screen.getByText("Total Income")).toBeInTheDocument();
     expect(summaryChips.getByText("$2500.00")).toBeInTheDocument();
@@ -248,7 +259,8 @@ describe("TransactionsScreen list rendering", () => {
     expect(screen.queryByText("Grocery Store")).not.toBeInTheDocument();
     expect(screen.getByText("1 Transactions")).toBeInTheDocument();
 
-    const clearInlineButton = searchInput.parentElement?.querySelector("button");
+    const clearInlineButton =
+      searchInput.parentElement?.querySelector("button");
     expect(clearInlineButton).toBeTruthy();
     await user.click(clearInlineButton!);
 
@@ -383,7 +395,12 @@ describe("TransactionsScreen list rendering", () => {
         nextInvoiceTransactions={[]}
         paymentMethods={paymentMethods}
         previewInstallmentPrepaymentAction={() =>
-          Promise.resolve({ count: 0, installments: [], targetMonth: "2026-07", totalAmount: 0 })
+          Promise.resolve({
+            count: 0,
+            installments: [],
+            targetMonth: "2026-07",
+            totalAmount: 0,
+          })
         }
         showNextInvoice={false}
         showPrevious
