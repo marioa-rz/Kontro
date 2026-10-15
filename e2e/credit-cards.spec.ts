@@ -20,12 +20,12 @@ test("creates a credit card payment method and uses it in a transaction", async 
   const cycleDay = String(lastDayOfMonth);
 
   await page.goto("/payments");
-  await page.getByRole("button", { name: "Add payment method" }).click();
+  await page.getByRole("button", { name: "Agregar método de pago" }).click();
 
   const methodDialog = page.getByRole("dialog");
   await methodDialog.locator("#new-payment-method-name").fill(cardName);
   await methodDialog.getByRole("combobox").first().click();
-  await page.getByRole("option", { name: "Credit card", exact: true }).click();
+  await page.getByRole("option", { name: "Tarjeta de crédito", exact: true }).click();
   await methodDialog
     .locator("#new-payment-method-limit")
     .pressSequentially("500000");
@@ -34,22 +34,22 @@ test("creates a credit card payment method and uses it in a transaction", async 
     .fill(cycleDay);
   await methodDialog.locator("#new-payment-method-due-day").fill(cycleDay);
   await methodDialog
-    .getByRole("button", { name: "Add payment method" })
+    .getByRole("button", { name: "Agregar método de pago" })
     .click();
 
   await expect(
-    page.getByText("Payment method created successfully."),
+    page.getByText("Método de pago creado correctamente."),
   ).toBeVisible();
   await expect(page.getByText(cardName, { exact: true })).toBeVisible();
   const cardEntry = page.getByRole("button", {
-    name: `Payment details: ${cardName}`,
+    name: `Detalles del pago: ${cardName}`,
     exact: true,
   });
-  await expect(cardEntry.getByText(/Limit:/)).toBeVisible();
+  await expect(cardEntry.getByText(/Límite:/)).toBeVisible();
 
   // Use the new credit card in a transaction
   await page.goto("/transactions");
-  await page.getByRole("button", { name: "Add Transaction" }).click();
+  await page.getByRole("button", { name: "Agregar movimiento" }).click();
 
   const txDialog = page.getByRole("dialog");
   await txDialog.locator("#amount").pressSequentially("15000");
@@ -57,11 +57,11 @@ test("creates a credit card payment method and uses it in a transaction", async 
   await txDialog.getByRole("button", { name: cardName, exact: true }).click();
 
   await expect(
-    txDialog.getByLabel("Installment", { exact: false }),
+    txDialog.getByLabel("Pago en cuotas", { exact: false }),
   ).toBeVisible();
 
-  await txDialog.getByRole("button", { name: "Save transaction" }).click();
+  await txDialog.getByRole("button", { name: "Guardar movimiento" }).click();
 
-  await expect(page.getByText("Transaction recorded successfully!")).toBeVisible();
+  await expect(page.getByText("Movimiento registrado correctamente.")).toBeVisible();
   await expect(page.getByText(description, { exact: true })).toBeVisible();
 });

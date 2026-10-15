@@ -9,26 +9,26 @@ test("creates a credit card payment method and a subscription", async ({
   await page.goto("/payments");
 
   // Payment method
-  await page.getByRole("button", { name: "Add payment method" }).click();
+  await page.getByRole("button", { name: "Agregar método de pago" }).click();
   const methodDialog = page.getByRole("dialog");
   await methodDialog.locator("#new-payment-method-name").fill(methodName);
   await methodDialog.getByRole("combobox").first().click();
-  await page.getByRole("option", { name: "Credit card", exact: true }).click();
+  await page.getByRole("option", { name: "Tarjeta de crédito", exact: true }).click();
   await methodDialog
     .locator("#new-payment-method-limit")
     .pressSequentially("500000");
   await methodDialog
-    .getByRole("button", { name: "Add payment method" })
+    .getByRole("button", { name: "Agregar método de pago" })
     .click();
 
   await expect(
-    page.getByText("Payment method created successfully."),
+    page.getByText("Método de pago creado correctamente."),
   ).toBeVisible();
   await expect(page.getByText(methodName, { exact: true })).toBeVisible();
 
   // Subscription
-  await page.getByRole("tab", { name: "Active Subscriptions" }).click();
-  await page.getByRole("button", { name: "Add Subscription" }).click();
+  await page.getByRole("tab", { name: "Suscripciones activas" }).click();
+  await page.getByRole("button", { name: "Agregar suscripción" }).click();
   const subscriptionDialog = page.getByRole("dialog");
   await subscriptionDialog
     .locator("#subscription-name")
@@ -37,11 +37,11 @@ test("creates a credit card payment method and a subscription", async ({
     .locator("#subscription-amount")
     .pressSequentially("2990");
   await subscriptionDialog
-    .getByRole("button", { name: "Add Subscription" })
+    .getByRole("button", { name: "Agregar suscripción" })
     .click();
 
   await expect(
-    page.getByText("Subscription scheduled successfully."),
+    page.getByText("Suscripción programada correctamente."),
   ).toBeVisible();
   await expect(
     page.getByText(subscriptionName, { exact: true }).first(),

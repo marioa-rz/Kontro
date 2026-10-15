@@ -6,10 +6,11 @@ test.describe("dashboard", () => {
   });
 
   test("renders the summary cards", async ({ page }) => {
-    await expect(page.getByText("Ingresos totales")).toBeVisible();
-    await expect(page.getByText("Gastos totales")).toBeVisible();
-    await expect(page.getByText("Total ahorrado")).toBeVisible();
-    await expect(page.getByText("Saldo disponible")).toBeVisible();
+    const main = page.getByRole("main");
+    await expect(main.getByText("Ingresos totales")).toBeVisible();
+    await expect(main.getByText("Gastos totales")).toBeVisible();
+    await expect(main.getByText("Total ahorrado")).toBeVisible();
+    await expect(main.getByText("Saldo disponible")).toBeVisible();
   });
 
   test("navigates through every sidebar section", async ({ page }) => {
