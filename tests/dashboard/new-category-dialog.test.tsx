@@ -18,7 +18,11 @@ beforeAll(() => {
 
 const refresh = vi.fn();
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: () => refresh() }),
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    refresh: () => refresh(),
+  }),
 }));
 
 vi.mock("sonner", () => ({
@@ -42,6 +46,7 @@ const translations: Record<string, string> = {
   "data.group.needs": "Needs",
   "data.group.wants": "Wants",
   "data.group.savings": "Savings",
+  "data.group.income": "Income",
   "category.monthlyLimit": "Monthly limit",
   "common.cancel": "Cancel",
   "category.saving": "Saving...",
@@ -63,6 +68,18 @@ vi.mock("@/lib/i18n", () => ({
 import { toast } from "sonner";
 
 describe("NewCategoryDialog", () => {
+  it("can start a new category in the income group", () => {
+    render(
+      <NewCategoryDialog
+        open
+        defaultGroup="income"
+        createCategoryAction={vi.fn()}
+        onOpenChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("combobox")).toHaveTextContent("Income");
+  });
   it("renders a children trigger uncontrolled and opens the dialog on click", () => {
     render(
       <NewCategoryDialog createCategoryAction={vi.fn()}>
@@ -80,7 +97,11 @@ describe("NewCategoryDialog", () => {
 
   it("renders already open via the controlled open prop", () => {
     render(
-      <NewCategoryDialog open createCategoryAction={vi.fn()} onOpenChange={vi.fn()} />,
+      <NewCategoryDialog
+        open
+        createCategoryAction={vi.fn()}
+        onOpenChange={vi.fn()}
+      />,
     );
 
     expect(screen.getByText("New category")).toBeInTheDocument();
@@ -202,7 +223,11 @@ describe("NewCategoryDialog", () => {
   it("shows a validation error toast and does not call the create action when the name is empty", () => {
     const createCategoryAction = vi.fn();
     render(
-      <NewCategoryDialog open createCategoryAction={createCategoryAction} onOpenChange={vi.fn()} />,
+      <NewCategoryDialog
+        open
+        createCategoryAction={createCategoryAction}
+        onOpenChange={vi.fn()}
+      />,
     );
 
     fireEvent.click(screen.getByText("Create"));
@@ -214,7 +239,11 @@ describe("NewCategoryDialog", () => {
   it("shows a validation error when the name is whitespace-only and there is no category name fallback", () => {
     const createCategoryAction = vi.fn();
     render(
-      <NewCategoryDialog open createCategoryAction={createCategoryAction} onOpenChange={vi.fn()} />,
+      <NewCategoryDialog
+        open
+        createCategoryAction={createCategoryAction}
+        onOpenChange={vi.fn()}
+      />,
     );
 
     fireEvent.change(screen.getByPlaceholderText("e.g. Groceries"), {
@@ -300,10 +329,16 @@ describe("NewCategoryDialog", () => {
   it("logs and shows an error toast when createCategoryAction rejects, then re-enables the form", async () => {
     const error = new Error("network down");
     const createCategoryAction = vi.fn().mockRejectedValue(error);
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
 
     render(
-      <NewCategoryDialog open createCategoryAction={createCategoryAction} onOpenChange={vi.fn()} />,
+      <NewCategoryDialog
+        open
+        createCategoryAction={createCategoryAction}
+        onOpenChange={vi.fn()}
+      />,
     );
 
     fireEvent.change(screen.getByPlaceholderText("e.g. Groceries"), {
@@ -312,7 +347,10 @@ describe("NewCategoryDialog", () => {
     fireEvent.click(screen.getByText("Create"));
 
     await vi.waitFor(() => {
-      expect(consoleErrorSpy).toHaveBeenCalledWith("Error saving category:", error);
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "Error saving category:",
+        error,
+      );
     });
     expect(toast.error).toHaveBeenCalledWith("Could not create category");
     await vi.waitFor(() => {
@@ -325,7 +363,9 @@ describe("NewCategoryDialog", () => {
   it("logs and shows an error toast when updateCategoryAction rejects", async () => {
     const error = new Error("update failed");
     const updateCategoryAction = vi.fn().mockRejectedValue(error);
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
 
     render(
       <NewCategoryDialog
@@ -346,7 +386,10 @@ describe("NewCategoryDialog", () => {
     fireEvent.click(screen.getByText("Update"));
 
     await vi.waitFor(() => {
-      expect(consoleErrorSpy).toHaveBeenCalledWith("Error saving category:", error);
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "Error saving category:",
+        error,
+      );
     });
     expect(toast.error).toHaveBeenCalledWith("Could not update category");
 
@@ -355,7 +398,11 @@ describe("NewCategoryDialog", () => {
 
   it("toggles the selected emoji when a different one is clicked", () => {
     render(
-      <NewCategoryDialog open createCategoryAction={vi.fn()} onOpenChange={vi.fn()} />,
+      <NewCategoryDialog
+        open
+        createCategoryAction={vi.fn()}
+        onOpenChange={vi.fn()}
+      />,
     );
 
     const defaultButton = screen.getByLabelText("Outros");
@@ -377,7 +424,11 @@ describe("NewCategoryDialog", () => {
     const createCategoryAction = vi.fn().mockResolvedValue(undefined);
 
     render(
-      <NewCategoryDialog open createCategoryAction={createCategoryAction} onOpenChange={vi.fn()} />,
+      <NewCategoryDialog
+        open
+        createCategoryAction={createCategoryAction}
+        onOpenChange={vi.fn()}
+      />,
     );
 
     await user.click(screen.getByRole("combobox"));
@@ -478,5 +529,25 @@ describe("NewCategoryDialog", () => {
     expect(
       (screen.getByPlaceholderText("e.g. Groceries") as HTMLInputElement).value,
     ).toBe("Games");
+  });
+
+  it("locks the financial group while editing a category", () => {
+    render(
+      <NewCategoryDialog
+        open
+        category={{
+          group: "income",
+          icon: "💼",
+          id: "cat-income",
+          monthlyLimit: 0,
+          name: "Freelance",
+        }}
+        createCategoryAction={vi.fn()}
+        updateCategoryAction={vi.fn()}
+        onOpenChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("combobox")).toBeDisabled();
   });
 });

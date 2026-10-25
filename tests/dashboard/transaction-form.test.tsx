@@ -46,6 +46,7 @@ const translations: Record<string, string> = {
   "transaction.amount": "Amount",
   "transaction.category": "Category",
   "transaction.addCategory": "Add category",
+  "transaction.manageCategories": "Manage categories",
   "transaction.description": "Description",
   "transaction.descriptionPlaceholder": "e.g. Groceries",
   "transaction.paymentMethod": "Payment method",
@@ -63,6 +64,8 @@ const translations: Record<string, string> = {
   "data.category.entertainment": "Entertainment",
   "data.category.investments": "Investments",
   "data.category.receipts": "Receipts",
+  "data.category.freelance": "Freelance",
+  "data.category.emergencyFund": "Emergency fund",
   "pm.debit": "Debit Card",
   "pm.credit": "Credit Card",
   "pm.boleto": "Boleto",
@@ -113,6 +116,20 @@ const categories: TransactionFormCategory[] = [
     label: "data.category.receipts",
     monthlyLimit: 0,
   },
+  {
+    group: "income",
+    id: "cat-income-freelance",
+    icon: "💼",
+    label: "data.category.freelance",
+    monthlyLimit: 0,
+  },
+  {
+    group: "savings",
+    id: "cat-emergency-fund",
+    icon: "🛡️",
+    label: "data.category.emergencyFund",
+    monthlyLimit: 250,
+  },
 ];
 
 const categoriesNoSavings = categories.filter((c) => c.group !== "savings");
@@ -140,7 +157,10 @@ function baseProps(overrides: Partial<FormProps> = {}): FormProps {
   };
 }
 
-function fillRequiredFields(overrides?: { description?: string; amount?: string }) {
+function fillRequiredFields(overrides?: {
+  description?: string;
+  amount?: string;
+}) {
   fireEvent.change(screen.getByPlaceholderText("e.g. Groceries"), {
     target: { value: overrides?.description ?? "Groceries" },
   });
@@ -175,21 +195,25 @@ describe("TransactionForm rendering", () => {
 });
 
 describe("TransactionForm type tabs", () => {
-  it("shows the synthetic income chip only, and the savings chip when switching to saving", () => {
+  it("shows every income and savings category and allows adding another one", () => {
     render(<TransactionForm {...baseProps()} />);
 
     fireEvent.click(screen.getByText("Income"));
     expect(screen.getByText("Receipts")).toBeInTheDocument();
+    expect(screen.getByText("Freelance")).toBeInTheDocument();
+    expect(screen.getByText("Manage categories")).toBeInTheDocument();
     expect(screen.queryByText("Rent")).not.toBeInTheDocument();
     expect(screen.queryByText("Entertainment")).not.toBeInTheDocument();
     expect(screen.queryByText("Investments")).not.toBeInTheDocument();
-    expect(screen.queryByText("Add category")).not.toBeInTheDocument();
+    expect(screen.getByText("Add category")).toBeInTheDocument();
 
     fireEvent.click(screen.getByText("Saving"));
     expect(screen.getByText("Investments")).toBeInTheDocument();
+    expect(screen.getByText("Emergency fund")).toBeInTheDocument();
+    expect(screen.getByText("Manage categories")).toBeInTheDocument();
     expect(screen.queryByText("Rent")).not.toBeInTheDocument();
     expect(screen.queryByText("Receipts")).not.toBeInTheDocument();
-    expect(screen.queryByText("Add category")).not.toBeInTheDocument();
+    expect(screen.getByText("Add category")).toBeInTheDocument();
 
     fireEvent.click(screen.getByText("Expense"));
     expect(screen.getByText("Rent")).toBeInTheDocument();
@@ -197,8 +221,17 @@ describe("TransactionForm type tabs", () => {
     expect(screen.getByText("Add category")).toBeInTheDocument();
   });
 
+  it("does not render the notes field in the add transaction form", () => {
+    render(<TransactionForm {...baseProps()} />);
+
+    expect(screen.queryByLabelText("Notes")).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("Add a note")).not.toBeInTheDocument();
+  });
+
   it("falls back to all expense categories for saving type when there are no savings categories", () => {
-    render(<TransactionForm {...baseProps({ categories: categoriesNoSavings })} />);
+    render(
+      <TransactionForm {...baseProps({ categories: categoriesNoSavings })} />,
+    );
 
     fireEvent.click(screen.getByText("Saving"));
     expect(screen.getByText("Rent")).toBeInTheDocument();
@@ -227,7 +260,9 @@ describe("TransactionForm type tabs", () => {
     ];
 
     render(
-      <TransactionForm {...baseProps({ categories: categoriesWithUnknownGroup })} />,
+      <TransactionForm
+        {...baseProps({ categories: categoriesWithUnknownGroup })}
+      />,
     );
 
     fireEvent.click(screen.getByText("data.category.other-thing"));
@@ -238,7 +273,9 @@ describe("TransactionForm type tabs", () => {
 
   it("keeps a still-valid savings category on a categories prop change, and falls back once it becomes invalid while on saving type", () => {
     const onSubmit = vi.fn().mockResolvedValue(undefined);
-    const { rerender } = render(<TransactionForm {...baseProps({ onSubmit })} />);
+    const { rerender } = render(
+      <TransactionForm {...baseProps({ onSubmit })} />,
+    );
 
     fireEvent.click(screen.getByText("Saving"));
     expect(screen.getByText("Investments").closest("button")).toHaveClass(
@@ -249,7 +286,9 @@ describe("TransactionForm type tabs", () => {
     // re-run while still on "saving" and the selected category is still
     // valid -> exercises the "keep current category" branch.
     rerender(
-      <TransactionForm {...baseProps({ onSubmit, categories: [...categories] })} />,
+      <TransactionForm
+        {...baseProps({ onSubmit, categories: [...categories] })}
+      />,
     );
     expect(screen.getByText("Investments").closest("button")).toHaveClass(
       "border-green-500/40",
@@ -285,7 +324,10 @@ describe("TransactionForm type tabs", () => {
     // the effect (as opposed to the tab-click handler, which sets it directly).
     rerender(
       <TransactionForm
-        {...baseProps({ categories: [...categories], paymentMethods: [...paymentMethods] })}
+        {...baseProps({
+          categories: [...categories],
+          paymentMethods: [...paymentMethods],
+        })}
       />,
     );
     expect(screen.getByText("Receipts")).toBeInTheDocument();
@@ -307,7 +349,11 @@ describe("empty categories/payment methods edge case", () => {
   it("falls back to 'none' defaults everywhere and still submits successfully", async () => {
     const onSubmit = vi.fn().mockResolvedValue(undefined);
     const { toast } = await import("sonner");
-    render(<TransactionForm {...baseProps({ onSubmit, categories: [], paymentMethods: [] })} />);
+    render(
+      <TransactionForm
+        {...baseProps({ onSubmit, categories: [], paymentMethods: [] })}
+      />,
+    );
 
     fillRequiredFields();
     submit();
@@ -327,7 +373,9 @@ describe("handlePaymentMethodChange defensive fallback", () => {
       { id: "pm-credit", label: "pm.credit", type: "credit" },
     ];
     render(
-      <TransactionForm {...baseProps({ paymentMethods: mutablePaymentMethods })} />,
+      <TransactionForm
+        {...baseProps({ paymentMethods: mutablePaymentMethods })}
+      />,
     );
 
     const creditButton = screen.getByText("Credit Card").closest("button")!;
@@ -347,7 +395,11 @@ describe("handlePaymentMethodChange defensive fallback", () => {
 describe("installment eligibility across payment method types", () => {
   it("shows the installment select for credit/boleto/label-contains-boleto methods and hides it for debit, resetting the count on non-installment methods", async () => {
     const user = userEvent.setup();
-    render(<TransactionForm {...baseProps({ paymentMethods: paymentMethodsAllTypes })} />);
+    render(
+      <TransactionForm
+        {...baseProps({ paymentMethods: paymentMethodsAllTypes })}
+      />,
+    );
 
     // Default payment method is debit -> no installment select.
     expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
@@ -380,7 +432,11 @@ describe("installment eligibility across payment method types", () => {
   });
 
   it("hides the installment select outside of expense type even with a credit payment method", () => {
-    render(<TransactionForm {...baseProps({ paymentMethods: paymentMethodsAllTypes })} />);
+    render(
+      <TransactionForm
+        {...baseProps({ paymentMethods: paymentMethodsAllTypes })}
+      />,
+    );
 
     fireEvent.click(screen.getByText("Credit Card"));
     expect(screen.getByRole("combobox")).toBeInTheDocument();
@@ -457,10 +513,6 @@ describe("successful submission", () => {
     render(<TransactionForm {...baseProps({ onSubmit })} />);
 
     fillRequiredFields({ description: "Groceries" });
-    fireEvent.change(screen.getByPlaceholderText("Add a note"), {
-      target: { value: "weekly run" },
-    });
-
     submit();
 
     await vi.waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
@@ -472,7 +524,6 @@ describe("successful submission", () => {
       paymentMethod: "pm-debit",
       installmentCount: 1,
       description: "Groceries",
-      notes: "weekly run",
     } satisfies TransactionFormData);
 
     expect(toast.success).toHaveBeenCalledWith("Transaction saved");
@@ -484,9 +535,9 @@ describe("successful submission", () => {
           .value,
       ).toBe("");
     });
-    expect((screen.getByPlaceholderText("0,00") as HTMLInputElement).value).toBe(
-      "",
-    );
+    expect(
+      (screen.getByPlaceholderText("0,00") as HTMLInputElement).value,
+    ).toBe("");
   });
 });
 
@@ -495,7 +546,9 @@ describe("failed submission", () => {
     const error = new Error("network down");
     const onSubmit = vi.fn().mockRejectedValue(error);
     const { toast } = await import("sonner");
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
 
     render(<TransactionForm {...baseProps({ onSubmit })} />);
     fillRequiredFields();
@@ -543,9 +596,12 @@ describe("add category / add payment method chips", () => {
     fireEvent.click(screen.getByText("Add payment method"));
     await screen.findByText("New payment method");
 
-    fireEvent.change(screen.getByPlaceholderText("paymentMethod.namePlaceholder"), {
-      target: { value: "Cash Wallet" },
-    });
+    fireEvent.change(
+      screen.getByPlaceholderText("paymentMethod.namePlaceholder"),
+      {
+        target: { value: "Cash Wallet" },
+      },
+    );
     fireEvent.click(screen.getByText("paymentMethod.create"));
 
     await vi.waitFor(() => {
@@ -564,5 +620,15 @@ describe("add category / add payment method chips", () => {
 
     fireEvent.click(screen.getByText("Add payment method"));
     expect(pushMock).toHaveBeenCalledWith("/payments?month=2026-07");
+  });
+
+  it("opens category management from the add transaction form", () => {
+    render(
+      <TransactionForm {...baseProps({ createCategoryAction: vi.fn() })} />,
+    );
+
+    fireEvent.click(screen.getByText("Manage categories"));
+
+    expect(pushMock).toHaveBeenCalledWith("/categories?month=2026-07");
   });
 });

@@ -1,24 +1,25 @@
 import { Suspense } from "react";
 
 import { AppShell } from "@/components/dashboard/app-shell";
-import { BudgetSplitChart } from "@/components/dashboard/budget-split-chart";
+import { FinancialFocus } from "@/components/dashboard/financial-focus";
 import { SummarySection } from "@/components/dashboard/summary-section";
-import { ExpensesByCategoryChart } from "@/components/dashboard/expenses-by-category-chart";
 import {
   DashboardLoadingRegion,
   FinancialSummaryRegion,
 } from "@/components/dashboard/localized-dashboard-regions";
-import {
-  DailyExpensesSplineChart,
-  ExpensesOverTimeChart,
-} from "@/components/dashboard/expenses-over-time-chart";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { TransactionsList } from "@/components/dashboard/transactions-list";
 import {
   createCategoryAction,
   createTransactionAction,
 } from "@/app/transactions/actions";
-import { getDashboardData, getUserContext } from "@/lib/finance/transactions";
+import {
+  getDashboardData,
+  getPaymentsDueData,
+  getUserContext,
+  listCategoryOverview,
+} from "@/lib/finance/transactions";
+import { buildDashboardFocusData } from "@/lib/finance/dashboard-focus";
 import { AnimatedCard } from "@/components/ui/animated-card";
 
 type DashboardPageProps = {
@@ -49,49 +50,16 @@ function DashboardContentFallback() {
 
 type DashboardData = Awaited<ReturnType<typeof getDashboardData>>;
 
-function DashboardCharts({
-  dashboardData,
-  selectedMonth,
-}: {
-  dashboardData: DashboardData;
-  selectedMonth?: string;
-}) {
+function DashboardDetails({ dashboardData }: { dashboardData: DashboardData }) {
   return (
-    <>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 mt-4 lg:mt-6">
-        <AnimatedCard index={2}>
-          <BudgetSplitChart budgetSplitData={dashboardData.budgetSplitData} />
-        </AnimatedCard>
-        <AnimatedCard index={3} className="lg:col-span-2">
-          <ExpensesOverTimeChart
-            expensesOverTime={dashboardData.expensesOverTime}
-          />
-        </AnimatedCard>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mt-4 lg:mt-6">
-        <AnimatedCard index={4}>
-          <ExpensesByCategoryChart
-            expensesByCategory={dashboardData.expensesByCategory}
-          />
-        </AnimatedCard>
-        <AnimatedCard index={5} className="h-full">
-          <TransactionsList transactions={dashboardData.latestTransactions} />
-        </AnimatedCard>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mt-4 lg:mt-6">
-        <AnimatedCard index={6} className="h-full">
-          <DailyExpensesSplineChart
-            dailyExpensesOverTime={dashboardData.dailyExpensesOverTime}
-            selectedMonth={selectedMonth}
-          />
-        </AnimatedCard>
-        <AnimatedCard index={7}>
-          <QuickActions />
-        </AnimatedCard>
-      </div>
-    </>
+    <div className="mt-4 grid grid-cols-1 gap-4 lg:mt-6 lg:grid-cols-2 lg:gap-6">
+      <AnimatedCard index={4} className="h-full">
+        <TransactionsList transactions={dashboardData.latestTransactions} />
+      </AnimatedCard>
+      <AnimatedCard index={5}>
+        <QuickActions />
+      </AnimatedCard>
+    </div>
   );
 }
 
@@ -102,7 +70,12 @@ async function DashboardContent({
   selectedMonth?: string;
   userContext: Awaited<ReturnType<typeof getUserContext>>;
 }) {
-  const dashboardData = await getDashboardData(selectedMonth, userContext);
+  const [dashboardData, categories, paymentsDue] = await Promise.all([
+    getDashboardData(selectedMonth, userContext),
+    listCategoryOverview(selectedMonth, userContext),
+    getPaymentsDueData(selectedMonth, userContext),
+  ]);
+  const focusData = buildDashboardFocusData(categories, paymentsDue.invoices);
 
   return (
     <>
@@ -118,10 +91,8 @@ async function DashboardContent({
         </FinancialSummaryRegion>
       </AnimatedCard>
 
-      <DashboardCharts
-        dashboardData={dashboardData}
-        selectedMonth={selectedMonth}
-      />
+      <FinancialFocus data={focusData} />
+      <DashboardDetails dashboardData={dashboardData} />
     </>
   );
 }

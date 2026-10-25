@@ -62,10 +62,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import {
   type CreditCardInvoicePurchase,
   type Transaction,
+  type TransactionGroup,
   type TransactionType,
 } from "@/lib/data";
 import {
@@ -165,7 +165,11 @@ type FormatDate = (
   date: string | Date,
   options?: Intl.DateTimeFormatOptions,
 ) => string;
-type CategoryOption = { label: string; value: string };
+type CategoryOption = {
+  group?: TransactionGroup;
+  label: string;
+  value: string;
+};
 
 function normalizeSearchValue(value: string) {
   return value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -234,14 +238,13 @@ export function isVisibleInSelectedMonth(
 
 function getInitialFormState(
   transaction: Transaction,
-  incomeCategoryId: string,
+  fallbackIncomeCategoryId: string,
 ): EditableTransaction {
   return {
     amount: Math.abs(transaction.amount),
     category:
-      transaction.type === "income"
-        ? incomeCategoryId
-        : (transaction.categoryId ?? "none"),
+      transaction.categoryId ??
+      (transaction.type === "income" ? fallbackIncomeCategoryId : "none"),
     date: transaction.date,
     description: transaction.descriptionKey,
     notes: transaction.notes ?? "",
@@ -1384,7 +1387,7 @@ type TransactionEditFormProps = {
   readonly formData: EditableTransaction;
   readonly setFormData: (data: EditableTransaction) => void;
   readonly categoryOptions: CategoryOption[];
-  readonly incomeCategoryOption: CategoryOption;
+  readonly incomeCategoryOptions: CategoryOption[];
   readonly paymentMethodOptions: CategoryOption[];
   readonly t: Translate;
   readonly resolveCategoryForType: (
@@ -1457,7 +1460,7 @@ type TransactionDateCategoryPaymentFieldsProps = {
   readonly formData: EditableTransaction;
   readonly setFormData: (data: EditableTransaction) => void;
   readonly categoryOptions: CategoryOption[];
-  readonly incomeCategoryOption: CategoryOption;
+  readonly incomeCategoryOptions: CategoryOption[];
   readonly paymentMethodOptions: CategoryOption[];
   readonly t: Translate;
 };
@@ -1490,12 +1493,18 @@ function TransactionCategoryField({
   formData,
   setFormData,
   categoryOptions,
-  incomeCategoryOption,
+  incomeCategoryOptions,
   t,
 }: Pick<
   TransactionDateCategoryPaymentFieldsProps,
-  "formData" | "setFormData" | "categoryOptions" | "incomeCategoryOption" | "t"
+  "formData" | "setFormData" | "categoryOptions" | "incomeCategoryOptions" | "t"
 >) {
+  const availableCategories = getCategoryOptionsForType(
+    formData.type,
+    categoryOptions,
+    incomeCategoryOptions,
+  );
+
   return (
     <div className="space-y-2">
       <Label htmlFor="transaction-category">{t("transaction.category")}</Label>
@@ -1507,10 +1516,7 @@ function TransactionCategoryField({
           <SelectValue placeholder={t("common.category")} />
         </SelectTrigger>
         <SelectContent>
-          {(formData.type === "income"
-            ? [incomeCategoryOption]
-            : categoryOptions
-          ).map((category) => (
+          {availableCategories.map((category) => (
             <SelectItem key={category.value} value={category.value}>
               {category.label}
             </SelectItem>
@@ -1561,7 +1567,7 @@ function TransactionDateCategoryPaymentFields({
   formData,
   setFormData,
   categoryOptions,
-  incomeCategoryOption,
+  incomeCategoryOptions,
   paymentMethodOptions,
   t,
 }: TransactionDateCategoryPaymentFieldsProps) {
@@ -1576,7 +1582,7 @@ function TransactionDateCategoryPaymentFields({
         formData={formData}
         setFormData={setFormData}
         categoryOptions={categoryOptions}
-        incomeCategoryOption={incomeCategoryOption}
+        incomeCategoryOptions={incomeCategoryOptions}
         t={t}
       />
       <TransactionPaymentField
@@ -1593,7 +1599,7 @@ function TransactionEditForm({
   formData,
   setFormData,
   categoryOptions,
-  incomeCategoryOption,
+  incomeCategoryOptions,
   paymentMethodOptions,
   t,
   resolveCategoryForType,
@@ -1624,21 +1630,10 @@ function TransactionEditForm({
         formData={formData}
         setFormData={setFormData}
         categoryOptions={categoryOptions}
-        incomeCategoryOption={incomeCategoryOption}
+        incomeCategoryOptions={incomeCategoryOptions}
         paymentMethodOptions={paymentMethodOptions}
         t={t}
       />
-
-      <div className="space-y-2">
-        <Label htmlFor="transaction-notes">{t("transaction.notes")}</Label>
-        <Textarea
-          id="transaction-notes"
-          value={formData.notes}
-          onChange={(event) =>
-            setFormData({ ...formData, notes: event.target.value })
-          }
-        />
-      </div>
     </div>
   );
 }
@@ -1823,7 +1818,7 @@ type TransactionDetailsDialogProps = {
   readonly setFormData: (data: EditableTransaction) => void;
   readonly transactions: Transaction[];
   readonly categoryOptions: CategoryOption[];
-  readonly incomeCategoryOption: CategoryOption;
+  readonly incomeCategoryOptions: CategoryOption[];
   readonly paymentMethodOptions: CategoryOption[];
   readonly isPending: boolean;
   readonly pendingTransactionId: string | null;
@@ -1878,7 +1873,7 @@ type TransactionDetailsDialogMainContentProps = Pick<
   | "setFormData"
   | "transactions"
   | "categoryOptions"
-  | "incomeCategoryOption"
+  | "incomeCategoryOptions"
   | "paymentMethodOptions"
   | "isPending"
   | "pendingTransactionId"
@@ -1898,7 +1893,7 @@ function TransactionDetailsDialogMainContent({
   formData,
   setFormData,
   categoryOptions,
-  incomeCategoryOption,
+  incomeCategoryOptions,
   paymentMethodOptions,
   t,
   resolveCategoryForType,
@@ -1920,7 +1915,7 @@ function TransactionDetailsDialogMainContent({
           formData={formData}
           setFormData={setFormData}
           categoryOptions={categoryOptions}
-          incomeCategoryOption={incomeCategoryOption}
+          incomeCategoryOptions={incomeCategoryOptions}
           paymentMethodOptions={paymentMethodOptions}
           t={t}
           resolveCategoryForType={resolveCategoryForType}
@@ -2942,8 +2937,7 @@ function useTransactionsScreenNavigation({
   t: Translate;
   formatDate: FormatDate;
 }) {
-  const selectedMonth =
-    searchParams.get("month") ?? getGuatemalaMonthValue();
+  const selectedMonth = searchParams.get("month") ?? getGuatemalaMonthValue();
   const today = getGuatemalaDateValue();
   const yesterday = addDaysToDateValue(today, -1);
 
@@ -3020,23 +3014,43 @@ function useTransactionDialogsState(showNextInvoice: boolean) {
 
 type TransactionDialogsState = ReturnType<typeof useTransactionDialogsState>;
 
+function getCategoryOptionsForType(
+  type: TransactionType,
+  categoryOptions: CategoryOption[],
+  incomeCategoryOptions: CategoryOption[],
+) {
+  if (type === "income") return incomeCategoryOptions;
+  if (type === "saving") {
+    return categoryOptions.filter((category) => category.group === "savings");
+  }
+  return categoryOptions.filter(
+    (category) => category.group === "needs" || category.group === "wants",
+  );
+}
+
 function resolveCategoryForType(
   type: TransactionType,
   currentCategory: string,
   {
-    incomeCategoryId,
+    incomeCategoryOptions,
     categoryOptions,
-  }: { incomeCategoryId: string; categoryOptions: CategoryOption[] },
+  }: {
+    incomeCategoryOptions: CategoryOption[];
+    categoryOptions: CategoryOption[];
+  },
 ) {
-  if (type === "income") return incomeCategoryId;
-
-  const isCurrentCategoryStillValid = categoryOptions.some(
+  const availableCategories = getCategoryOptionsForType(
+    type,
+    categoryOptions,
+    incomeCategoryOptions,
+  );
+  const isCurrentCategoryStillValid = availableCategories.some(
     (category) => category.value === currentCategory,
   );
 
   return isCurrentCategoryStillValid
     ? currentCategory
-    : (categoryOptions[0]?.value ?? "none");
+    : (availableCategories[0]?.value ?? "none");
 }
 
 function closeTransactionDialogState(options: {
@@ -3069,11 +3083,13 @@ function closeTransactionDialogState(options: {
 
 function useTransactionDialogNavigation({
   dialogsState,
-  incomeCategoryId,
+  fallbackIncomeCategoryId,
+  incomeCategoryOptions,
   categoryOptions,
 }: {
   dialogsState: TransactionDialogsState;
-  incomeCategoryId: string;
+  fallbackIncomeCategoryId: string;
+  incomeCategoryOptions: CategoryOption[];
   categoryOptions: CategoryOption[];
 }) {
   const {
@@ -3090,7 +3106,7 @@ function useTransactionDialogNavigation({
     setFormData(
       transaction.isCreditCardInvoice
         ? null
-        : getInitialFormState(transaction, incomeCategoryId),
+        : getInitialFormState(transaction, fallbackIncomeCategoryId),
     );
   };
 
@@ -3113,7 +3129,7 @@ function useTransactionDialogNavigation({
   return {
     resolveCategoryForType: (type: TransactionType, currentCategory: string) =>
       resolveCategoryForType(type, currentCategory, {
-        incomeCategoryId,
+        incomeCategoryOptions,
         categoryOptions,
       }),
     openTransactionDialog,
@@ -3470,20 +3486,24 @@ function useTransactionOptionsData({
           (category) => category.id !== "none" && category.group !== "income",
         )
         .sort(compareCategoriesByGroupOrder)
-        .map((category) => ({ label: t(category.label), value: category.id })),
+        .map((category) => ({
+          group: category.group,
+          label: t(category.label),
+          value: category.id,
+        })),
     [categories, t],
   );
 
-  const incomeCategory = useMemo(
-    () => categories.find((category) => category.group === "income"),
-    [categories],
-  );
-  const incomeCategoryOption = useMemo(
-    () => ({
-      label: t(incomeCategory?.label ?? "data.category.receipts"),
-      value: incomeCategory?.id ?? "none",
-    }),
-    [incomeCategory, t],
+  const incomeCategoryOptions = useMemo(
+    () =>
+      categories
+        .filter((category) => category.group === "income")
+        .map((category) => ({
+          group: category.group,
+          label: t(category.label),
+          value: category.id,
+        })),
+    [categories, t],
   );
 
   const paymentMethodOptions = useMemo(
@@ -3497,8 +3517,8 @@ function useTransactionOptionsData({
 
   return {
     categoryOptions,
-    incomeCategoryOption,
-    incomeCategoryId: incomeCategoryOption.value,
+    fallbackIncomeCategoryId: incomeCategoryOptions[0]?.value ?? "none",
+    incomeCategoryOptions,
     paymentMethodOptions,
     groupOptions,
   };
@@ -3611,7 +3631,8 @@ function useTransactionsScreenHandlers({
     openInstallmentFromInvoice,
   } = useTransactionDialogNavigation({
     dialogsState: base.dialogsState,
-    incomeCategoryId: base.incomeCategoryId,
+    fallbackIncomeCategoryId: base.fallbackIncomeCategoryId,
+    incomeCategoryOptions: base.incomeCategoryOptions,
     categoryOptions: base.categoryOptions,
   });
 
@@ -3832,7 +3853,7 @@ type TransactionsScreenDialogsSectionProps = Pick<
     | "formData"
     | "setFormData"
     | "categoryOptions"
-    | "incomeCategoryOption"
+    | "incomeCategoryOptions"
     | "paymentMethodOptions"
     | "isPending"
     | "pendingTransactionId"
@@ -3868,7 +3889,7 @@ function TransactionsScreenDetailsDialog(
     | "setFormData"
     | "transactions"
     | "categoryOptions"
-    | "incomeCategoryOption"
+    | "incomeCategoryOptions"
     | "paymentMethodOptions"
     | "isPending"
     | "pendingTransactionId"

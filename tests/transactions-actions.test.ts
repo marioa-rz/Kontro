@@ -134,6 +134,19 @@ describe("createTransactionAction", () => {
 });
 
 describe("createCategoryAction / updateCategoryAction / deleteCategoryAction", () => {
+  it("accepts an income category", async () => {
+    await createCategoryAction({
+      group: "income",
+      icon: "💼",
+      monthlyLimit: 0,
+      name: "Freelance",
+    });
+
+    expect(createCategory).toHaveBeenCalledWith(
+      expect.objectContaining({ group: "income", name: "Freelance" }),
+    );
+  });
+
   it("creates a category", async () => {
     await createCategoryAction({
       group: "needs",
@@ -209,7 +222,10 @@ describe("createSubscriptionAction / updateSubscriptionAction", () => {
     });
 
     expect(createSubscription).toHaveBeenCalledWith(
-      expect.objectContaining({ category: "cat-wants", paymentMethod: "pm-card" }),
+      expect.objectContaining({
+        category: "cat-wants",
+        paymentMethod: "pm-card",
+      }),
     );
     expect(revalidatePath).toHaveBeenCalledWith("/payments");
   });
@@ -239,7 +255,10 @@ describe("createSubscriptionAction / updateSubscriptionAction", () => {
     });
 
     expect(updateSubscription).toHaveBeenCalledWith(
-      expect.objectContaining({ category: "cat-wants", paymentMethod: "pm-card" }),
+      expect.objectContaining({
+        category: "cat-wants",
+        paymentMethod: "pm-card",
+      }),
     );
   });
 
@@ -322,7 +341,10 @@ describe("updateTransactionAction / deleteTransactionAction", () => {
     });
 
     expect(updateTransaction).toHaveBeenCalledWith(
-      expect.objectContaining({ category: "cat-wants", paymentMethod: "pm-card" }),
+      expect.objectContaining({
+        category: "cat-wants",
+        paymentMethod: "pm-card",
+      }),
     );
   });
 

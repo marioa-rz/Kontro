@@ -77,8 +77,10 @@ function qb(response: { data?: unknown; error?: unknown }) {
     select: chain,
     single: chain,
     update: chain,
-    then: (resolve: (value: unknown) => void, reject: (reason: unknown) => void) =>
-      Promise.resolve(response).then(resolve, reject),
+    then: (
+      resolve: (value: unknown) => void,
+      reject: (reason: unknown) => void,
+    ) => Promise.resolve(response).then(resolve, reject),
   });
   return builder;
 }
@@ -234,7 +236,7 @@ describe("listCategoryOverview", () => {
     monthly_limit: 100,
   };
 
-  it("computes spent per category and filters out income categories, with an explicit userContext", async () => {
+  it("computes actual amounts and includes income categories, with an explicit userContext", async () => {
     const ctx = makeCtx([
       qb({ data: [catNeeds, catWants, catIncome], error: null }),
       qb({
@@ -252,20 +254,19 @@ describe("listCategoryOverview", () => {
 
     const overview = await listCategoryOverview(CURRENT_MONTH, ctx);
 
-    expect(overview).toHaveLength(2);
+    expect(overview).toHaveLength(3);
     const food = overview.find((item) => item.id === catNeeds.id);
     const shopping = overview.find((item) => item.id === catWants.id);
     expect(food?.spent).toBe(30);
     expect(food?.monthlyLimit).toBe(500);
     expect(shopping?.monthlyLimit).toBe(0);
-    expect(overview.some((item) => item.id === catIncome.id)).toBe(false);
+    expect(overview.find((item) => item.id === catIncome.id)?.group).toBe(
+      "income",
+    );
   });
 
   it("returns an empty array when there are no categories, without an explicit userContext", async () => {
-    setup([
-      qb({ data: null, error: null }),
-      qb({ data: [], error: null }),
-    ]);
+    setup([qb({ data: null, error: null }), qb({ data: [], error: null })]);
 
     await expect(listCategoryOverview(CURRENT_MONTH)).resolves.toEqual([]);
   });
@@ -662,10 +663,7 @@ describe("getPaymentsDueData", () => {
   });
 
   it("returns empty collections and a null next due date when there is nothing due, without an explicit userContext", async () => {
-    setup([
-      qb({ data: [], error: null }),
-      qb({ data: [], error: null }),
-    ]);
+    setup([qb({ data: [], error: null }), qb({ data: [], error: null })]);
 
     const result = await getPaymentsDueData(CURRENT_MONTH);
 
@@ -722,9 +720,7 @@ describe("listGoals", () => {
   });
 
   it("throws for any other query error", async () => {
-    setup([
-      qb({ data: null, error: { code: "500", message: "boom" } }),
-    ]);
+    setup([qb({ data: null, error: { code: "500", message: "boom" } })]);
     await expect(listGoals()).rejects.toThrow("Unable to load goals: boom");
   });
 });
@@ -772,9 +768,9 @@ describe("getTransactionFormOptions", () => {
     const options = await getTransactionFormOptions({ userContext: ctx });
 
     expect(options.categories).toHaveLength(2);
-    expect(options.categories.find((c) => c.id === category.id)?.monthlyLimit).toBe(
-      500,
-    );
+    expect(
+      options.categories.find((c) => c.id === category.id)?.monthlyLimit,
+    ).toBe(500);
     expect(
       options.categories.find((c) => c.id === categoryNoLimit.id)?.monthlyLimit,
     ).toBe(0);
@@ -790,15 +786,18 @@ describe("getTransactionFormOptions", () => {
   });
 
   it("returns sentinel 'none' options when there are no categories or payment methods, without options", async () => {
-    setup([
-      qb({ data: [], error: null }),
-      qb({ data: [], error: null }),
-    ]);
+    setup([qb({ data: [], error: null }), qb({ data: [], error: null })]);
 
     const options = await getTransactionFormOptions();
 
     expect(options.categories).toEqual([
-      { group: "wants", id: "none", icon: "🏷️", label: "none", monthlyLimit: 0 },
+      {
+        group: "wants",
+        id: "none",
+        icon: "🏷️",
+        label: "none",
+        monthlyLimit: 0,
+      },
     ]);
     expect(options.paymentMethods).toEqual([
       { id: "none", label: "none", type: "cash" },

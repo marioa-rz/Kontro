@@ -155,6 +155,13 @@ const categories: TransactionFormCategory[] = [
     label: "data.category.receipts",
     monthlyLimit: 0,
   },
+  {
+    group: "income",
+    id: "cat-freelance",
+    icon: "💼",
+    label: "Freelance",
+    monthlyLimit: 0,
+  },
 ];
 
 const incomeOnlyCategories: TransactionFormCategory[] = [
@@ -990,67 +997,60 @@ describe("Transaction details dialog - invoice view", () => {
 });
 
 describe("Transaction details dialog - edit mode", () => {
-  it(
-    "updates amount, description, date, category, payment method and notes fields, then saves them all",
-    async () => {
-      const user = userEvent.setup();
-      const plainTx = makeTransaction({
+  // Sequential real-timer interactions can exceed the default timeout under
+  // CPU contention, especially when the full coverage suite is running.
+  it("updates the visible fields, keeps legacy notes, and does not render a notes input", async () => {
+    const user = userEvent.setup();
+    const plainTx = makeTransaction({
+      id: "tx-edit",
+      date: "2026-07-01",
+      descriptionKey: "Edit me",
+      categoryId: "cat-wants",
+      paymentMethodId: "pm-card",
+      notes: "old notes",
+      amount: -50,
+    });
+    const updateTransactionAction = vi.fn().mockResolvedValue(undefined);
+    renderScreen({ transactions: [plainTx], updateTransactionAction });
+
+    await user.click(getRowOpenButton("Edit me"));
+    const dialog = await screen.findByRole("dialog");
+
+    const amountInput = within(dialog).getByLabelText("Transaction amount");
+    fireChange(amountInput, "5000");
+
+    const descriptionInput = within(dialog).getByLabelText("Description");
+    await user.clear(descriptionInput);
+    await user.type(descriptionInput, "Updated description");
+
+    const dateInput = within(dialog).getByLabelText("Transaction date");
+    fireChange(dateInput, "2026-07-15");
+
+    await user.click(within(dialog).getByLabelText("Category"));
+    let listbox = await screen.findByRole("listbox");
+    await user.click(within(listbox).getByText("Rent"));
+
+    await user.click(within(dialog).getByLabelText("Payment method"));
+    listbox = await screen.findByRole("listbox");
+    await user.click(within(listbox).getByText("Payment method"));
+
+    expect(within(dialog).queryByLabelText("Notes")).not.toBeInTheDocument();
+
+    await user.click(within(dialog).getByText("Save changes"));
+
+    await vi.waitFor(() => {
+      expect(updateTransactionAction).toHaveBeenCalledWith({
+        amount: 50,
+        category: "cat-needs",
+        date: "2026-07-15",
+        description: "Updated description",
         id: "tx-edit",
-        date: "2026-07-01",
-        descriptionKey: "Edit me",
-        categoryId: "cat-wants",
-        paymentMethodId: "pm-card",
         notes: "old notes",
-        amount: -50,
+        paymentMethod: "none",
+        type: "expense",
       });
-      const updateTransactionAction = vi.fn().mockResolvedValue(undefined);
-      renderScreen({ transactions: [plainTx], updateTransactionAction });
-
-      await user.click(getRowOpenButton("Edit me"));
-      const dialog = await screen.findByRole("dialog");
-
-      const amountInput = within(dialog).getByLabelText("Transaction amount");
-      fireChange(amountInput, "5000");
-
-      const descriptionInput = within(dialog).getByLabelText("Description");
-      await user.clear(descriptionInput);
-      await user.type(descriptionInput, "Updated description");
-
-      const dateInput = within(dialog).getByLabelText("Transaction date");
-      fireChange(dateInput, "2026-07-15");
-
-      await user.click(within(dialog).getByLabelText("Category"));
-      let listbox = await screen.findByRole("listbox");
-      await user.click(within(listbox).getByText("Rent"));
-
-      await user.click(within(dialog).getByLabelText("Payment method"));
-      listbox = await screen.findByRole("listbox");
-      await user.click(within(listbox).getByText("Payment method"));
-
-      const notesInput = within(dialog).getByLabelText("Notes");
-      await user.clear(notesInput);
-      await user.type(notesInput, "new notes");
-
-      await user.click(within(dialog).getByText("Save changes"));
-
-      await vi.waitFor(() => {
-        expect(updateTransactionAction).toHaveBeenCalledWith({
-          amount: 50,
-          category: "cat-needs",
-          date: "2026-07-15",
-          description: "Updated description",
-          id: "tx-edit",
-          notes: "new notes",
-          paymentMethod: "none",
-          type: "expense",
-        });
-      });
-    },
-    // Six sequential real-timer userEvent interactions (type x2,
-    // click-through comboboxes x2) can exceed the default 10s testTimeout
-    // under CPU contention (e.g. the full suite running under coverage).
-    20_000,
-  );
+    });
+  }, 20_000);
 
   it("saves changes successfully: calls updateTransactionAction, closes, and refreshes", async () => {
     const user = userEvent.setup();
@@ -1086,6 +1086,39 @@ describe("Transaction details dialog - edit mode", () => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
     expect(mockRefresh).toHaveBeenCalled();
+  });
+
+  it("preserves the selected income category when editing an income", async () => {
+    const user = userEvent.setup();
+    const incomeTx = makeTransaction({
+      amount: 500,
+      categoryId: "cat-freelance",
+      categoryKey: "Freelance",
+      date: "2026-07-01",
+      descriptionKey: "Freelance project",
+      group: "income",
+      id: "tx-income-freelance",
+      type: "income",
+    });
+    const updateTransactionAction = vi.fn().mockResolvedValue(undefined);
+    renderScreen({ transactions: [incomeTx], updateTransactionAction });
+
+    await user.click(getRowOpenButton("Freelance project"));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Freelance")).toBeInTheDocument();
+
+    await user.click(within(dialog).getByLabelText("Category"));
+    const listbox = await screen.findByRole("listbox");
+    expect(within(listbox).getByText("Receipts")).toBeInTheDocument();
+    expect(within(listbox).getByText("Freelance")).toBeInTheDocument();
+    await user.click(within(listbox).getByText("Freelance"));
+    await user.click(within(dialog).getByText("Save changes"));
+
+    await vi.waitFor(() => {
+      expect(updateTransactionAction).toHaveBeenCalledWith(
+        expect.objectContaining({ category: "cat-freelance" }),
+      );
+    });
   });
 
   it("disables save when the description is blank", async () => {
@@ -1212,21 +1245,27 @@ describe("Transaction details dialog - edit mode", () => {
     await user.click(getRowOpenButton("Type switch"));
     const dialog = await screen.findByRole("dialog");
 
-    // expense -> saving: category stays valid ("cat-wants" is in categoryOptions).
+    // expense -> saving: the incompatible expense category is replaced.
     await user.click(within(dialog).getByLabelText("Type"));
     let listbox = await screen.findByRole("listbox");
     await user.click(within(listbox).getByText("Saving"));
-    expect(within(dialog).getByText("Entertainment")).toBeInTheDocument();
+    expect(within(dialog).getByText("Investments")).toBeInTheDocument();
+
+    await user.click(within(dialog).getByLabelText("Category"));
+    listbox = await screen.findByRole("listbox");
+    expect(within(listbox).getAllByRole("option")).toHaveLength(1);
+    expect(within(listbox).getByText("Investments")).toBeInTheDocument();
+    await user.click(within(listbox).getByText("Investments"));
 
     // saving -> income: category becomes the income category id.
     await user.click(within(dialog).getByLabelText("Type"));
     listbox = await screen.findByRole("listbox");
     await user.click(within(listbox).getByText("Income"));
 
-    // Category select should now only offer the income category option.
+    // Category select should offer every income category.
     await user.click(within(dialog).getByLabelText("Category"));
     listbox = await screen.findByRole("listbox");
-    expect(within(listbox).getAllByRole("option")).toHaveLength(1);
+    expect(within(listbox).getAllByRole("option")).toHaveLength(2);
     expect(within(listbox).getByText("Receipts")).toBeInTheDocument();
     await user.click(within(listbox).getByText("Receipts"));
 
@@ -1453,7 +1492,7 @@ describe("Add transaction flow (handleNewTransactionSubmit)", () => {
     });
   });
 
-  it("submits with real category/payment method ids and trimmed notes when filled in", async () => {
+  it("submits with real category and payment method ids without a notes field", async () => {
     const user = userEvent.setup();
     const createTransactionAction = vi.fn().mockResolvedValue(undefined);
     renderScreen({ categories, paymentMethods, createTransactionAction });
@@ -1468,7 +1507,7 @@ describe("Add transaction flow (handleNewTransactionSubmit)", () => {
     const amountInput = within(dialog).getByLabelText("Transaction amount");
     fireChange(amountInput, "2500");
     await user.click(within(dialog).getByText("Entertainment"));
-    await user.type(within(dialog).getByLabelText("Notes"), "  some notes  ");
+    expect(within(dialog).queryByLabelText("Notes")).not.toBeInTheDocument();
 
     await user.click(within(dialog).getByRole("button", { name: /Save/ }));
 
@@ -1477,7 +1516,7 @@ describe("Add transaction flow (handleNewTransactionSubmit)", () => {
         expect.objectContaining({
           category: "cat-wants",
           paymentMethod: "pm-card",
-          notes: "some notes",
+          notes: undefined,
           description: "New savings",
         }),
       );

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { type Transaction } from "@/lib/data";
 import { buildExpensesByCategoryData } from "@/lib/finance/category-aggregation";
+import { GROUP_COLORS } from "@/lib/finance/group-colors";
 
 function transaction(
   overrides: Pick<
@@ -64,7 +65,7 @@ describe("category expense aggregation", () => {
     expect(expensesByCategory).toEqual([
       {
         categoryId: "22222222-2222-4222-8222-222222222222",
-        color: "#2563EB",
+        color: GROUP_COLORS.needs,
         group: "needs",
         groupKey: "data.group.needs",
         nameKey: "Academy/Gym",
@@ -72,7 +73,7 @@ describe("category expense aggregation", () => {
       },
       {
         categoryId: "11111111-1111-4111-8111-111111111111",
-        color: "#2563EB",
+        color: GROUP_COLORS.needs,
         group: "needs",
         groupKey: "data.group.needs",
         nameKey: "data.category.health",
@@ -80,7 +81,7 @@ describe("category expense aggregation", () => {
       },
       {
         categoryId: "33333333-3333-4333-8333-333333333333",
-        color: "#2563EB",
+        color: GROUP_COLORS.needs,
         group: "needs",
         groupKey: "data.group.needs",
         nameKey: "data.category.health",
@@ -117,7 +118,7 @@ describe("category expense aggregation", () => {
     expect(expensesByCategory).toEqual([
       {
         categoryId: null,
-        color: "#2563EB",
+        color: GROUP_COLORS.needs,
         group: "needs",
         groupKey: "data.group.needs",
         nameKey: "data.category.other",
@@ -125,7 +126,7 @@ describe("category expense aggregation", () => {
       },
       {
         categoryId: null,
-        color: "#F6C453",
+        color: GROUP_COLORS.wants,
         group: "wants",
         groupKey: "data.group.wants",
         nameKey: "data.category.other",
@@ -210,7 +211,7 @@ describe("category expense aggregation", () => {
     expect(buildExpensesByCategoryData([saving])).toEqual([
       {
         categoryId: "55555555-5555-4555-8555-555555555555",
-        color: "#22C55E",
+        color: GROUP_COLORS.savings,
         group: "savings",
         groupKey: "data.group.savings",
         nameKey: "data.category.investments",

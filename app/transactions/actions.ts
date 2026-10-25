@@ -69,7 +69,7 @@ const dateSchema = z
 
 const createCategoryActionSchema = z
   .object({
-    group: z.enum(["needs", "wants", "savings"]),
+    group: z.enum(["needs", "wants", "savings", "income"]),
     icon: z.string().trim().max(32),
     monthlyLimit: z.number().finite().min(0).max(1_000_000_000).optional(),
     name: safeShortTextSchema,
@@ -164,7 +164,10 @@ const deleteInstallmentsActionSchema = z
 const advanceInstallmentsActionSchema = z
   .object({
     scope: z.enum(["remaining", "selected_and_remaining"]).optional(),
-    targetMonth: z.string().trim().regex(/^\d{4}-\d{2}$/, "Invalid month"),
+    targetMonth: z
+      .string()
+      .trim()
+      .regex(/^\d{4}-\d{2}$/, "Invalid month"),
     transactionId: uuidSchema,
   })
   .strict();
@@ -365,7 +368,9 @@ export async function deleteInstallmentsAction(data: DeleteInstallmentsInput) {
   revalidatePath("/transactions");
 }
 
-export async function advanceInstallmentsAction(data: AdvanceInstallmentsInput) {
+export async function advanceInstallmentsAction(
+  data: AdvanceInstallmentsInput,
+) {
   const parsed = advanceInstallmentsActionSchema.parse(data);
 
   await advanceInstallments(parsed);

@@ -58,8 +58,10 @@ function qb(response: { data?: unknown; error?: unknown }) {
     select: chain,
     single: chain,
     update: chain,
-    then: (resolve: (value: unknown) => void, reject: (reason: unknown) => void) =>
-      Promise.resolve(response).then(resolve, reject),
+    then: (
+      resolve: (value: unknown) => void,
+      reject: (reason: unknown) => void,
+    ) => Promise.resolve(response).then(resolve, reject),
   });
   return builder;
 }
@@ -88,7 +90,10 @@ function makeSupabase(
   };
 }
 
-function setup(fromResponses: unknown[] = [], opts: { createdAt?: string | null } = {}) {
+function setup(
+  fromResponses: unknown[] = [],
+  opts: { createdAt?: string | null } = {},
+) {
   const supabase = makeSupabase(fromResponses, opts);
   vi.mocked(createClient).mockResolvedValue(supabase as never);
   return supabase;
@@ -206,7 +211,9 @@ describe("updateSubscription", () => {
   });
 
   it("throws when the referenced transaction is not a subscription", async () => {
-    setup([qb({ data: subscriptionReference({ notes: "plain" }), error: null })]);
+    setup([
+      qb({ data: subscriptionReference({ notes: "plain" }), error: null }),
+    ]);
     await expect(updateSubscription(validInput)).rejects.toThrow(
       "Subscription is invalid.",
     );
@@ -241,7 +248,10 @@ describe("updateSubscription", () => {
         }),
         error: null,
       }),
-      qb({ data: [{ date: "2026-08-01", id: "occ-1", notes: "subscription 1/12" }], error: null }),
+      qb({
+        data: [{ date: "2026-08-01", id: "occ-1", notes: "subscription 1/12" }],
+        error: null,
+      }),
       qb({ data: { id: CATEGORY_ID }, error: null }),
       qb({ data: { id: PAYMENT_METHOD_ID }, error: null }),
       qb({ error: { message: "notes failed" } }),
@@ -264,7 +274,10 @@ describe("updateSubscription", () => {
         }),
         error: null,
       }),
-      qb({ data: [{ date: "2026-08-01", id: "occ-1", notes: "subscription 1/12" }], error: null }),
+      qb({
+        data: [{ date: "2026-08-01", id: "occ-1", notes: "subscription 1/12" }],
+        error: null,
+      }),
       qb({ data: { id: CATEGORY_ID }, error: null }),
       qb({ data: { id: PAYMENT_METHOD_ID }, error: null }),
       qb({ error: null }),
@@ -283,7 +296,10 @@ describe("updateSubscription", () => {
   it("throws when updating an occurrence fails", async () => {
     setup([
       qb({ data: subscriptionReference(), error: null }),
-      qb({ data: [{ date: "2026-08-01", id: "occ-1", notes: "subscription 1/12" }], error: null }),
+      qb({
+        data: [{ date: "2026-08-01", id: "occ-1", notes: "subscription 1/12" }],
+        error: null,
+      }),
       qb({ error: null }),
       qb({ error: { message: "update failed" } }),
     ]);
@@ -304,7 +320,10 @@ describe("setSubscriptionPaused", () => {
   it("pauses every future occurrence (category/payment null)", async () => {
     setup([
       qb({ data: subscriptionReference(), error: null }),
-      qb({ data: [{ date: "2026-08-01", id: "occ-1", notes: "subscription 1/12" }], error: null }),
+      qb({
+        data: [{ date: "2026-08-01", id: "occ-1", notes: "subscription 1/12" }],
+        error: null,
+      }),
       qb({ error: null }),
     ]);
     await expect(
@@ -315,7 +334,10 @@ describe("setSubscriptionPaused", () => {
   it("resumes every future occurrence", async () => {
     setup([
       qb({ data: subscriptionReference(), error: null }),
-      qb({ data: [{ date: "2026-08-01", id: "occ-1", notes: "subscription 1/12" }], error: null }),
+      qb({
+        data: [{ date: "2026-08-01", id: "occ-1", notes: "subscription 1/12" }],
+        error: null,
+      }),
       qb({ error: null }),
     ]);
     await expect(
@@ -326,7 +348,10 @@ describe("setSubscriptionPaused", () => {
   it("throws when an occurrence update fails", async () => {
     setup([
       qb({ data: subscriptionReference(), error: null }),
-      qb({ data: [{ date: "2026-08-01", id: "occ-1", notes: "subscription 1/12" }], error: null }),
+      qb({
+        data: [{ date: "2026-08-01", id: "occ-1", notes: "subscription 1/12" }],
+        error: null,
+      }),
       qb({ error: { message: "pause failed" } }),
     ]);
     await expect(setSubscriptionPaused(SUBSCRIPTION_ID, true)).rejects.toThrow(
@@ -339,7 +364,10 @@ describe("deleteSubscription", () => {
   it("deletes every future occurrence", async () => {
     const supabase = setup([
       qb({ data: subscriptionReference(), error: null }),
-      qb({ data: [{ date: "2026-08-01", id: "occ-1", notes: "subscription 1/12" }], error: null }),
+      qb({
+        data: [{ date: "2026-08-01", id: "occ-1", notes: "subscription 1/12" }],
+        error: null,
+      }),
       qb({ error: null }),
     ]);
     await expect(deleteSubscription(SUBSCRIPTION_ID)).resolves.toBeUndefined();
@@ -349,7 +377,10 @@ describe("deleteSubscription", () => {
   it("throws when the delete fails", async () => {
     setup([
       qb({ data: subscriptionReference(), error: null }),
-      qb({ data: [{ date: "2026-08-01", id: "occ-1", notes: "subscription 1/12" }], error: null }),
+      qb({
+        data: [{ date: "2026-08-01", id: "occ-1", notes: "subscription 1/12" }],
+        error: null,
+      }),
       qb({ error: { message: "delete failed" } }),
     ]);
     await expect(deleteSubscription(SUBSCRIPTION_ID)).rejects.toThrow(
@@ -377,7 +408,9 @@ describe("deleteSubscriptionOccurrences", () => {
   });
 
   it("throws when the transaction is not a subscription occurrence", async () => {
-    setup([qb({ data: subscriptionReference({ notes: "plain" }), error: null })]);
+    setup([
+      qb({ data: subscriptionReference({ notes: "plain" }), error: null }),
+    ]);
     await expect(
       deleteSubscriptionOccurrences({
         scope: "single",
@@ -415,7 +448,16 @@ describe("deleteSubscriptionOccurrences", () => {
   it("throws when the selected occurrence is not in the group", async () => {
     setup([
       qb({ data: subscriptionReference(), error: null }),
-      qb({ data: [{ date: "2026-08-01", id: "other-occurrence", notes: "subscription 1/12" }], error: null }),
+      qb({
+        data: [
+          {
+            date: "2026-08-01",
+            id: "other-occurrence",
+            notes: "subscription 1/12",
+          },
+        ],
+        error: null,
+      }),
     ]);
     await expect(
       deleteSubscriptionOccurrences({
@@ -434,7 +476,16 @@ describe("deleteSubscriptionOccurrences", () => {
         }),
         error: null,
       }),
-      qb({ data: [{ date: "2026-08-01", id: SUBSCRIPTION_ID, notes: "subscription 1/12" }], error: null }),
+      qb({
+        data: [
+          {
+            date: "2026-08-01",
+            id: SUBSCRIPTION_ID,
+            notes: "subscription 1/12",
+          },
+        ],
+        error: null,
+      }),
       qb({ error: null }),
     ]);
     await expect(
@@ -449,7 +500,16 @@ describe("deleteSubscriptionOccurrences", () => {
   it("deletes the selected occurrence group (category/payment null)", async () => {
     setup([
       qb({ data: subscriptionReference(), error: null }),
-      qb({ data: [{ date: "2026-08-01", id: SUBSCRIPTION_ID, notes: "subscription 1/12" }], error: null }),
+      qb({
+        data: [
+          {
+            date: "2026-08-01",
+            id: SUBSCRIPTION_ID,
+            notes: "subscription 1/12",
+          },
+        ],
+        error: null,
+      }),
       qb({ error: null }),
     ]);
     await expect(
@@ -463,7 +523,16 @@ describe("deleteSubscriptionOccurrences", () => {
   it("throws when the final delete fails", async () => {
     setup([
       qb({ data: subscriptionReference(), error: null }),
-      qb({ data: [{ date: "2026-08-01", id: SUBSCRIPTION_ID, notes: "subscription 1/12" }], error: null }),
+      qb({
+        data: [
+          {
+            date: "2026-08-01",
+            id: SUBSCRIPTION_ID,
+            notes: "subscription 1/12",
+          },
+        ],
+        error: null,
+      }),
       qb({ error: { message: "delete failed" } }),
     ]);
     await expect(
@@ -503,7 +572,16 @@ describe("deleteSubscriptionOccurrences", () => {
         data: subscriptionReference({ category_id: CATEGORY_ID }),
         error: null,
       }),
-      qb({ data: [{ date: "2026-08-01", id: SUBSCRIPTION_ID, notes: "subscription 1/12" }], error: null }),
+      qb({
+        data: [
+          {
+            date: "2026-08-01",
+            id: SUBSCRIPTION_ID,
+            notes: "subscription 1/12",
+          },
+        ],
+        error: null,
+      }),
       qb({ error: null }),
     ]);
     await expect(
@@ -521,7 +599,16 @@ describe("deleteSubscriptionOccurrences", () => {
         data: subscriptionReference({ payment_method_id: PAYMENT_METHOD_ID }),
         error: null,
       }),
-      qb({ data: [{ date: "2026-08-01", id: SUBSCRIPTION_ID, notes: "subscription 1/12" }], error: null }),
+      qb({
+        data: [
+          {
+            date: "2026-08-01",
+            id: SUBSCRIPTION_ID,
+            notes: "subscription 1/12",
+          },
+        ],
+        error: null,
+      }),
       qb({ error: null }),
     ]);
     await expect(
@@ -538,9 +625,21 @@ describe("deleteSubscriptionOccurrences", () => {
       qb({ data: subscriptionReference(), error: null }),
       qb({
         data: [
-          { date: "2026-06-01", id: "past-occurrence", notes: "subscription 1/12" },
-          { date: "2026-08-01", id: SUBSCRIPTION_ID, notes: "subscription 1/12" },
-          { date: "2026-09-01", id: "future-occurrence", notes: "subscription 1/12" },
+          {
+            date: "2026-06-01",
+            id: "past-occurrence",
+            notes: "subscription 1/12",
+          },
+          {
+            date: "2026-08-01",
+            id: SUBSCRIPTION_ID,
+            notes: "subscription 1/12",
+          },
+          {
+            date: "2026-09-01",
+            id: "future-occurrence",
+            notes: "subscription 1/12",
+          },
         ],
         error: null,
       }),
@@ -829,13 +928,15 @@ describe("createGoal", () => {
 
   it("throws for an invalid color", async () => {
     setup([]);
-    await expect(
-      createGoal({ ...validInput, color: "red" }),
-    ).rejects.toThrow("Color is invalid.");
+    await expect(createGoal({ ...validInput, color: "red" })).rejects.toThrow(
+      "Color is invalid.",
+    );
   });
 
   it("does not enforce a creation-month cutoff when the user's created_at is unparseable", async () => {
-    const supabase = setup([qb({ error: null })], { createdAt: "not-a-real-date" });
+    const supabase = setup([qb({ error: null })], {
+      createdAt: "not-a-real-date",
+    });
     await expect(createGoal(validInput)).resolves.toBeUndefined();
     expect(supabase.from).toHaveBeenCalledWith("goals");
   });
@@ -883,9 +984,9 @@ describe("updateGoal", () => {
 
   it("throws for an invalid id", async () => {
     setup([]);
-    await expect(
-      updateGoal({ ...validInput, id: "bad-id" }),
-    ).rejects.toThrow("Goal is invalid.");
+    await expect(updateGoal({ ...validInput, id: "bad-id" })).rejects.toThrow(
+      "Goal is invalid.",
+    );
   });
 
   it("throws for a negative current amount", async () => {
@@ -952,7 +1053,10 @@ describe("addGoalFunds", () => {
 
   it("throws when the rpc call errors", async () => {
     const supabase = setup([]);
-    supabase.rpc.mockResolvedValue({ data: null, error: { message: "rpc failed" } });
+    supabase.rpc.mockResolvedValue({
+      data: null,
+      error: { message: "rpc failed" },
+    });
     await expect(addGoalFunds(GOAL_ID, 10)).rejects.toThrow(
       "Unable to add goal funds: rpc failed",
     );
@@ -961,9 +1065,7 @@ describe("addGoalFunds", () => {
   it("throws when the goal is not found", async () => {
     const supabase = setup([]);
     supabase.rpc.mockResolvedValue({ data: null, error: null });
-    await expect(addGoalFunds(GOAL_ID, 10)).rejects.toThrow(
-      "Goal not found.",
-    );
+    await expect(addGoalFunds(GOAL_ID, 10)).rejects.toThrow("Goal not found.");
   });
 
   it("adds funds on success", async () => {
@@ -1108,6 +1210,14 @@ describe("updateCategory", () => {
     await expect(updateCategory(validInput)).rejects.toThrow(
       "Category not found.",
     );
+  });
+
+  it("rejects moving a category to a different financial group", async () => {
+    setup([qb({ data: categoryRow(), error: null })]);
+
+    await expect(
+      updateCategory({ ...validInput, group: "income" }),
+    ).rejects.toThrow("Category group cannot be changed.");
   });
 
   it("updates a category on success", async () => {

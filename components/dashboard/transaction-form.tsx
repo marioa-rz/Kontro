@@ -3,13 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format, isValid, parse } from "date-fns";
-import { Calendar, Check, FileText, Plus, Tag } from "lucide-react";
+import { Calendar, Check, Pencil, Plus, Tag } from "lucide-react";
 import { toast } from "sonner";
 
 import { NewCategoryDialog } from "@/components/dashboard/new-category-dialog";
 import { CompactInput } from "@/components/dashboard/form-inputs/compact-input";
 import { CompactSelect } from "@/components/dashboard/form-inputs/compact-select";
-import { CompactTextarea } from "@/components/dashboard/form-inputs/compact-textarea";
 import { CurrencyInput } from "@/components/dashboard/form-inputs/currency-input";
 import { withSelectedMonth } from "@/components/dashboard/month-route";
 import { Button } from "@/components/ui/button";
@@ -92,7 +91,7 @@ function getSubmitButtonClasses(type: TransactionFormData["type"]) {
     return "bg-linear-to-r from-rose-300 to-orange-300 hover:from-rose-400 hover:to-orange-400 text-rose-900";
   }
   if (type === "saving") {
-    return "bg-linear-to-r from-blue-300 to-violet-300 hover:from-blue-400 hover:to-violet-400 text-blue-900";
+    return "bg-linear-to-r from-pink-300 to-rose-300 hover:from-pink-400 hover:to-rose-400 text-rose-950";
   }
   return "bg-linear-to-r from-emerald-300 to-blue-300 hover:from-emerald-400 hover:to-blue-400 text-emerald-900";
 }
@@ -105,8 +104,8 @@ function useBaseCategoryGroups(categories: TransactionFormCategory[]) {
       ),
     [categories],
   );
-  const incomeCategory = useMemo(
-    () => categories.find((category) => category.group === "income"),
+  const incomeCategories = useMemo(
+    () => categories.filter((category) => category.group === "income"),
     [categories],
   );
   const savingsCategories = useMemo(
@@ -116,13 +115,15 @@ function useBaseCategoryGroups(categories: TransactionFormCategory[]) {
   const fallbackExpenseCategoryId = expenseCategories[0]?.id ?? "none";
   const fallbackSavingsCategoryId =
     savingsCategories[0]?.id ?? fallbackExpenseCategoryId;
+  const fallbackIncomeCategoryId = incomeCategories[0]?.id ?? "none";
 
   return {
     expenseCategories,
-    incomeCategory,
+    incomeCategories,
     savingsCategories,
     fallbackExpenseCategoryId,
     fallbackSavingsCategoryId,
+    fallbackIncomeCategoryId,
   };
 }
 
@@ -135,20 +136,22 @@ function useTransactionFormCategoryData({
 }) {
   const {
     expenseCategories,
-    incomeCategory,
+    incomeCategories,
     savingsCategories,
     fallbackExpenseCategoryId,
     fallbackSavingsCategoryId,
+    fallbackIncomeCategoryId,
   } = useBaseCategoryGroups(categories);
 
-  const incomeCategoryOption = useMemo(
-    () => ({
-      value: incomeCategory?.id ?? "none",
-      label: t(incomeCategory?.label ?? "data.category.receipts"),
-      icon: incomeCategory?.icon ?? "💼",
-      group: "income" as const,
-    }),
-    [incomeCategory, t],
+  const incomeCategoryOptions = useMemo(
+    () =>
+      incomeCategories.map((category) => ({
+        value: category.id,
+        label: t(category.label),
+        icon: category.icon,
+        group: "income" as const,
+      })),
+    [incomeCategories, t],
   );
 
   const categoryOptions = useMemo(
@@ -180,8 +183,9 @@ function useTransactionFormCategoryData({
 
   return {
     expenseCategories,
-    incomeCategoryId: incomeCategoryOption.value,
-    incomeCategoryOption,
+    incomeCategories,
+    fallbackIncomeCategoryId,
+    incomeCategoryOptions,
     savingsCategories,
     fallbackExpenseCategoryId,
     fallbackSavingsCategoryId,
@@ -215,25 +219,31 @@ function canUseInstallments(
 function useTransactionFormTypeSyncEffect({
   setFormData,
   expenseCategories,
+  incomeCategories,
   savingsCategories,
   fallbackExpenseCategoryId,
+  fallbackIncomeCategoryId,
   fallbackSavingsCategoryId,
-  incomeCategoryId,
   paymentMethods,
 }: {
   setFormData: React.Dispatch<React.SetStateAction<TransactionFormData>>;
   expenseCategories: TransactionFormCategory[];
+  incomeCategories: TransactionFormCategory[];
   savingsCategories: TransactionFormCategory[];
   fallbackExpenseCategoryId: string;
+  fallbackIncomeCategoryId: string;
   fallbackSavingsCategoryId: string;
-  incomeCategoryId: string;
   paymentMethods: TransactionFormPaymentMethod[];
 }) {
   useEffect(() => {
     setFormData((currentFormData) => {
       let category: string;
       if (currentFormData.type === "income") {
-        category = incomeCategoryId;
+        category = incomeCategories.some(
+          (candidate) => candidate.id === currentFormData.category,
+        )
+          ? currentFormData.category
+          : fallbackIncomeCategoryId;
       } else if (currentFormData.type === "saving") {
         category = savingsCategories.some(
           (c) => c.id === currentFormData.category,
@@ -260,8 +270,9 @@ function useTransactionFormTypeSyncEffect({
   }, [
     expenseCategories,
     fallbackExpenseCategoryId,
+    fallbackIncomeCategoryId,
     fallbackSavingsCategoryId,
-    incomeCategoryId,
+    incomeCategories,
     paymentMethods,
     savingsCategories,
     setFormData,
@@ -321,7 +332,6 @@ function useTransactionFormSubmitHandlers({
       paymentMethod: paymentMethods[0]?.id ?? "none",
       installmentCount: 1,
       description: "",
-      notes: "",
     });
   };
 
@@ -394,7 +404,7 @@ const INSTALLMENT_COUNTS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 24];
 const SECTION_LABEL_CLASS =
   "mb-2.5 block text-xs font-medium uppercase tracking-widest text-muted-foreground";
 const CHIP_BASE_CLASS =
-  "flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-200 cursor-pointer max-w-full";
+  "flex min-h-11 items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-200 cursor-pointer max-w-full";
 const CHIP_ADD_ACTION_CLASS =
   "border-dashed border-border/40 text-foreground/50 hover:border-border/60 hover:text-foreground/70";
 
@@ -411,7 +421,7 @@ function getInstallmentOptions(t: (key: string) => string) {
 function getDisplayedCategoryOptions({
   type,
   expenseOnlyCategoryOptions,
-  incomeCategoryOption,
+  incomeCategoryOptions,
   savingsCategoryOptions,
   categoryOptions,
 }: {
@@ -419,9 +429,9 @@ function getDisplayedCategoryOptions({
   expenseOnlyCategoryOptions: ReturnType<
     typeof useTransactionFormCategoryData
   >["expenseOnlyCategoryOptions"];
-  incomeCategoryOption: ReturnType<
+  incomeCategoryOptions: ReturnType<
     typeof useTransactionFormCategoryData
-  >["incomeCategoryOption"];
+  >["incomeCategoryOptions"];
   savingsCategoryOptions: ReturnType<
     typeof useTransactionFormCategoryData
   >["savingsCategoryOptions"];
@@ -429,7 +439,7 @@ function getDisplayedCategoryOptions({
     typeof useTransactionFormCategoryData
   >["categoryOptions"];
 }) {
-  if (type === "income") return [incomeCategoryOption];
+  if (type === "income") return incomeCategoryOptions;
   if (type === "saving")
     return savingsCategoryOptions.length > 0
       ? savingsCategoryOptions
@@ -447,7 +457,7 @@ type TransactionFormFieldProps = {
 type TransactionTypeSelectorProps = TransactionFormFieldProps & {
   readonly expenseCategories: TransactionFormCategory[];
   readonly fallbackExpenseCategoryId: string;
-  readonly incomeCategoryId: string;
+  readonly fallbackIncomeCategoryId: string;
   readonly fallbackSavingsCategoryId: string;
   readonly t: (key: string) => string;
 };
@@ -458,14 +468,14 @@ const TRANSACTION_TYPE_ACTIVE_CLASS: Record<
 > = {
   expense: "bg-red-500/20 border border-red-500/40 text-red-400 shadow-sm",
   income: "bg-green-500/20 border border-green-500/40 text-green-400 shadow-sm",
-  saving: "bg-blue-500/20 border border-blue-500/40 text-blue-400 shadow-sm",
+  saving: "bg-pink-500/20 border border-pink-500/40 text-pink-400 shadow-sm",
 };
 
 function getTransactionTypeButtonConfigs({
   formData,
   expenseCategories,
   fallbackExpenseCategoryId,
-  incomeCategoryId,
+  fallbackIncomeCategoryId,
   fallbackSavingsCategoryId,
 }: Omit<TransactionTypeSelectorProps, "setFormData" | "t">) {
   return [
@@ -480,7 +490,7 @@ function getTransactionTypeButtonConfigs({
     {
       type: "income" as const,
       labelKey: "transaction.typeIncome",
-      category: incomeCategoryId,
+      category: fallbackIncomeCategoryId,
       installmentCount: 1,
     },
     {
@@ -607,21 +617,29 @@ function TransactionCategoryChips({
             </button>
           );
         })}
-        {formData.type === "expense" && (
-          <button
-            type="button"
-            onClick={
-              createCategoryAction
-                ? () => setIsCategoryDialogOpen(true)
-                : () =>
-                    router.push(withSelectedMonth("/categories", searchParams))
-            }
-            className={`${CHIP_BASE_CLASS} ${CHIP_ADD_ACTION_CLASS}`}
-          >
-            <Plus className="h-3 w-3" />
-            {t("transaction.addCategory")}
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={
+            createCategoryAction
+              ? () => setIsCategoryDialogOpen(true)
+              : () =>
+                  router.push(withSelectedMonth("/categories", searchParams))
+          }
+          className={`${CHIP_BASE_CLASS} ${CHIP_ADD_ACTION_CLASS}`}
+        >
+          <Plus className="h-3 w-3" />
+          {t("transaction.addCategory")}
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            router.push(withSelectedMonth("/categories", searchParams))
+          }
+          className={`${CHIP_BASE_CLASS} ${CHIP_ADD_ACTION_CLASS}`}
+        >
+          <Pencil className="h-3 w-3" />
+          {t("transaction.manageCategories")}
+        </button>
       </div>
     </div>
   );
@@ -665,7 +683,7 @@ function TransactionPaymentMethodChips({
             onClick={() => handlePaymentMethodChange(pm.id)}
             className={`${CHIP_BASE_CLASS} ${
               formData.paymentMethod === pm.id
-                ? "border-green-500 bg-green-500/20 text-green-400 font-semibold"
+                ? "border-primary bg-primary/15 text-primary font-semibold"
                 : "border-border/40 text-foreground/70 hover:border-border/60 hover:bg-foreground/5"
             }`}
           >
@@ -792,7 +810,16 @@ type TransactionFormDialogsProps = {
   ) => Promise<void>;
   readonly isPaymentDialogOpen: boolean;
   readonly setIsPaymentDialogOpen: (open: boolean) => void;
+  readonly formData: TransactionFormData;
 };
+
+function getDefaultCategoryGroup(
+  type: TransactionFormData["type"],
+): CreateCategoryInput["group"] {
+  if (type === "income") return "income";
+  if (type === "saving") return "savings";
+  return "needs";
+}
 
 function TransactionFormDialogs({
   createCategoryAction,
@@ -801,12 +828,14 @@ function TransactionFormDialogs({
   createPaymentMethodAction,
   isPaymentDialogOpen,
   setIsPaymentDialogOpen,
+  formData,
 }: TransactionFormDialogsProps) {
   return (
     <>
       {createCategoryAction ? (
         <NewCategoryDialog
           createCategoryAction={createCategoryAction}
+          defaultGroup={getDefaultCategoryGroup(formData.type)}
           open={isCategoryDialogOpen}
           onOpenChange={setIsCategoryDialogOpen}
         />
@@ -871,7 +900,6 @@ function useTransactionFormBaseState({
     paymentMethod: paymentMethods[0]?.id ?? "none",
     installmentCount: 1,
     description: "",
-    notes: "",
   });
   const uiState = useTransactionFormUiState();
   const categoryData = useTransactionFormCategoryData({ categories, t });
@@ -879,7 +907,7 @@ function useTransactionFormBaseState({
   const displayedCategoryOptions = getDisplayedCategoryOptions({
     type: formData.type,
     expenseOnlyCategoryOptions: categoryData.expenseOnlyCategoryOptions,
-    incomeCategoryOption: categoryData.incomeCategoryOption,
+    incomeCategoryOptions: categoryData.incomeCategoryOptions,
     savingsCategoryOptions: categoryData.savingsCategoryOptions,
     categoryOptions: categoryData.categoryOptions,
   });
@@ -926,10 +954,11 @@ function useTransactionFormHandlers({
   useTransactionFormTypeSyncEffect({
     setFormData,
     expenseCategories: base.expenseCategories,
+    incomeCategories: base.incomeCategories,
     savingsCategories: base.savingsCategories,
     fallbackExpenseCategoryId,
+    fallbackIncomeCategoryId: base.fallbackIncomeCategoryId,
     fallbackSavingsCategoryId: base.fallbackSavingsCategoryId,
-    incomeCategoryId: base.incomeCategoryId,
     paymentMethods,
   });
 
@@ -979,7 +1008,7 @@ function useTransactionFormState({
 
 type TransactionFormState = ReturnType<typeof useTransactionFormState>;
 
-function TransactionDescriptionAndNotesFields({
+function TransactionDescriptionField({
   formData,
   setFormData,
   errors,
@@ -989,31 +1018,19 @@ function TransactionDescriptionAndNotesFields({
   readonly t: (key: string) => string;
 }) {
   return (
-    <>
-      <CompactInput
-        label={t("transaction.description")}
-        id="description"
-        type="text"
-        inputMode="text"
-        placeholder={t("transaction.descriptionPlaceholder")}
-        value={formData.description}
-        onChange={(event) =>
-          setFormData({ ...formData, description: event.target.value })
-        }
-        icon={<Tag className="w-4 h-4" />}
-        error={errors.description}
-      />
-      <CompactTextarea
-        label={t("transaction.notes")}
-        id="notes"
-        value={formData.notes || ""}
-        onChange={(event) =>
-          setFormData({ ...formData, notes: event.target.value })
-        }
-        placeholder={t("transaction.notesPlaceholder")}
-        icon={<FileText className="w-4 h-4" />}
-      />
-    </>
+    <CompactInput
+      label={t("transaction.description")}
+      id="description"
+      type="text"
+      inputMode="text"
+      placeholder={t("transaction.descriptionPlaceholder")}
+      value={formData.description}
+      onChange={(event) =>
+        setFormData({ ...formData, description: event.target.value })
+      }
+      icon={<Tag className="w-4 h-4" />}
+      error={errors.description}
+    />
   );
 }
 
@@ -1045,7 +1062,7 @@ function TransactionFormView(
           </div>
 
           <div className="flex flex-col gap-5 min-w-0">
-            <TransactionDescriptionAndNotesFields
+            <TransactionDescriptionField
               formData={formData}
               setFormData={setFormData}
               errors={errors}

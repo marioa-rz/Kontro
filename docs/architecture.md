@@ -18,11 +18,11 @@ Kontro is a Next.js App Router application backed by Supabase Auth and Supabase 
 - `/`: Google OAuth and email/password login screen. Authenticated users are redirected to `/dashboard`.
 - `/auth/callback`: Supabase OAuth and email recovery code exchange with guarded same-origin redirect handling.
 - `/auth/update-password`: password update screen for authenticated recovery sessions.
-- `/dashboard`: summary cards, transaction form, budget split, trends, latest transactions, and quick actions.
+- `/dashboard`: summary cards, transaction form, category-budget balances, credit-card payoff progress, income by source, latest transactions, and quick actions.
 - `/transactions`: transaction list with update/delete flows.
 - `/transactions/new`: focused new transaction flow.
 - `/categories`: category management with icons, groups, and monthly limits.
-- `/budgets`: 50/30/20 allocation and category budget progress.
+- `/budgets`: amount-first budget totals, group progress, and category budget progress.
 - `/payments`: payment methods, credit limits, due payments, and subscription management.
 - `/goals`: goals with target/current amounts, funding, deadlines, colors, and icons.
 - `/reports`: monthly reports, net worth progression, and transaction exports.
@@ -39,7 +39,7 @@ Kontro is a Next.js App Router application backed by Supabase Auth and Supabase 
 - Paused subscription rows use `subscription paused` notes and are hidden from transaction/payment views while remaining available to subscription overview logic.
 - Categories belong to one authenticated user and are grouped by Needs, Wants, Savings, or Income.
 - Categories can include emoji icons and monthly limits.
-- The dashboard computes the 50/30/20 split from the selected month's income and planned usage.
+- The dashboard prioritizes actual currency amounts. Budget and debt calculations live in `lib/finance/`, while React components only render prepared progress data.
 - Payment methods belong to one authenticated user. Cash-type methods are protected defaults; the legacy Pix type remains supported for migrated data.
 - Credit cards support `credit_limit`, `due_day`, and `closing_day`. Invoice rows are calculated in `lib/finance/credit-card-invoices.ts` for display and planning.
 - Payment method usage is calculated in `lib/finance/payment-method-overview.ts`.
