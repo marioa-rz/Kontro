@@ -21,6 +21,8 @@ test("configures a category budget and sees it reflected on the Budgets page", a
   await expect(
     page.getByRole("heading", { name: "Presupuestos" }),
   ).toBeVisible();
-  await expect(page.getByText("Presupuestos por categoría")).toBeVisible();
+  await expect(
+    page.getByRole("main").getByText("Presupuestos por categoría"),
+  ).toBeVisible();
   await expect(page.getByText(categoryName, { exact: true })).toBeVisible();
 });
