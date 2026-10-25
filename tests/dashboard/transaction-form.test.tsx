@@ -192,6 +192,31 @@ describe("TransactionForm rendering", () => {
     expect(screen.getByText("Add category")).toBeInTheDocument();
     expect(screen.getByText("Add payment method")).toBeInTheDocument();
   });
+
+  it("selects a compatible expense category when savings are listed first", () => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    const savingsFirst = [
+      ...categories.filter((category) => category.group === "savings"),
+      ...categories.filter((category) => category.group !== "savings"),
+    ];
+
+    render(
+      <TransactionForm
+        {...baseProps({ categories: savingsFirst, onSubmit })}
+      />,
+    );
+
+    expect(screen.getByText("Rent").closest("button")).toHaveClass(
+      "border-blue-500/40",
+    );
+
+    fillRequiredFields();
+    submit();
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ category: "cat-needs", type: "expense" }),
+    );
+  });
 });
 
 describe("TransactionForm type tabs", () => {
@@ -228,14 +253,15 @@ describe("TransactionForm type tabs", () => {
     expect(screen.queryByPlaceholderText("Add a note")).not.toBeInTheDocument();
   });
 
-  it("falls back to all expense categories for saving type when there are no savings categories", () => {
+  it("does not offer expense categories for saving type when there are no savings categories", () => {
     render(
       <TransactionForm {...baseProps({ categories: categoriesNoSavings })} />,
     );
 
     fireEvent.click(screen.getByText("Saving"));
-    expect(screen.getByText("Rent")).toBeInTheDocument();
-    expect(screen.getByText("Entertainment")).toBeInTheDocument();
+    expect(screen.queryByText("Rent")).not.toBeInTheDocument();
+    expect(screen.queryByText("Entertainment")).not.toBeInTheDocument();
+    expect(screen.getByText("Add category")).toBeInTheDocument();
   });
 
   it("selecting a category chip marks it selected", () => {
@@ -295,21 +321,19 @@ describe("TransactionForm type tabs", () => {
     );
 
     // Now the savings category disappears entirely while still on "saving"
-    // -> exercises the fallback branch, resetting to the first expense
-    // category.
+    // -> exercises the fallback branch without reusing an incompatible
+    // expense category.
     rerender(
       <TransactionForm
         {...baseProps({ onSubmit, categories: categoriesNoSavings })}
       />,
     );
-    expect(screen.getByText("Rent").closest("button")).toHaveClass(
-      "border-blue-500/40",
-    );
+    expect(screen.queryByText("Rent")).not.toBeInTheDocument();
 
     fillRequiredFields();
     submit();
     expect(onSubmit).toHaveBeenCalledWith(
-      expect.objectContaining({ category: "cat-needs" }),
+      expect.objectContaining({ category: "none", type: "saving" }),
     );
   });
 

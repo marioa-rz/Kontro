@@ -100,7 +100,10 @@ function useBaseCategoryGroups(categories: TransactionFormCategory[]) {
   const expenseCategories = useMemo(
     () =>
       categories.filter(
-        (category) => category.id !== "none" && category.group !== "income",
+        (category) =>
+          category.id !== "none" &&
+          category.group !== "income" &&
+          category.group !== "savings",
       ),
     [categories],
   );
@@ -109,12 +112,11 @@ function useBaseCategoryGroups(categories: TransactionFormCategory[]) {
     [categories],
   );
   const savingsCategories = useMemo(
-    () => expenseCategories.filter((category) => category.group === "savings"),
-    [expenseCategories],
+    () => categories.filter((category) => category.group === "savings"),
+    [categories],
   );
   const fallbackExpenseCategoryId = expenseCategories[0]?.id ?? "none";
-  const fallbackSavingsCategoryId =
-    savingsCategories[0]?.id ?? fallbackExpenseCategoryId;
+  const fallbackSavingsCategoryId = savingsCategories[0]?.id ?? "none";
   const fallbackIncomeCategoryId = incomeCategories[0]?.id ?? "none";
 
   return {
@@ -423,7 +425,6 @@ function getDisplayedCategoryOptions({
   expenseOnlyCategoryOptions,
   incomeCategoryOptions,
   savingsCategoryOptions,
-  categoryOptions,
 }: {
   type: TransactionFormData["type"];
   expenseOnlyCategoryOptions: ReturnType<
@@ -435,15 +436,9 @@ function getDisplayedCategoryOptions({
   savingsCategoryOptions: ReturnType<
     typeof useTransactionFormCategoryData
   >["savingsCategoryOptions"];
-  categoryOptions: ReturnType<
-    typeof useTransactionFormCategoryData
-  >["categoryOptions"];
 }) {
   if (type === "income") return incomeCategoryOptions;
-  if (type === "saving")
-    return savingsCategoryOptions.length > 0
-      ? savingsCategoryOptions
-      : categoryOptions;
+  if (type === "saving") return savingsCategoryOptions;
   return expenseOnlyCategoryOptions;
 }
 
@@ -895,7 +890,10 @@ function useTransactionFormBaseState({
     amount: 0,
     category:
       categories.find(
-        (category) => category.id !== "none" && category.group !== "income",
+        (category) =>
+          category.id !== "none" &&
+          category.group !== "income" &&
+          category.group !== "savings",
       )?.id ?? "none",
     paymentMethod: paymentMethods[0]?.id ?? "none",
     installmentCount: 1,
@@ -909,7 +907,6 @@ function useTransactionFormBaseState({
     expenseOnlyCategoryOptions: categoryData.expenseOnlyCategoryOptions,
     incomeCategoryOptions: categoryData.incomeCategoryOptions,
     savingsCategoryOptions: categoryData.savingsCategoryOptions,
-    categoryOptions: categoryData.categoryOptions,
   });
 
   return {
