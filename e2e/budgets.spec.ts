@@ -14,7 +14,9 @@ test("configures a category budget and sees it reflected on the Budgets page", a
   await dialog.getByRole("button", { name: "Crear categoría" }).click();
 
   await expect(page.getByText("Categoría creada correctamente.")).toBeVisible();
-  await expect(page.getByText(categoryName, { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("main").getByText(categoryName, { exact: true }),
+  ).toBeVisible();
 
   await page.goto("/budgets");
 
