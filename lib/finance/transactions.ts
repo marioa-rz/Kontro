@@ -25,6 +25,7 @@ import {
   getGuatemalaMonthValue,
 } from "@/lib/datetime/guatemala";
 import {
+  type BudgetGroup,
   calculateBudgetData,
   sumBudgetUsageByGroup,
 } from "@/lib/finance/budget";
@@ -80,7 +81,7 @@ export type AuthenticatedUserContext = {
   userId: string;
 };
 
-type DbCategoryGroup = Exclude<TransactionGroup, "income">;
+type DbCategoryGroup = TransactionGroup;
 type DbTransactionKind = TransactionType;
 
 type CategoryRow = {
@@ -291,7 +292,7 @@ export type SummaryData = {
 };
 
 export type BudgetData = Record<
-  DbCategoryGroup,
+  BudgetGroup,
   { spent: number; plannedSpent: number; budget: number; percentage: number }
 >;
 
@@ -428,7 +429,7 @@ const monthKeys = [
   "data.month.dec",
 ] as const;
 
-const categoryGroups = ["needs", "wants", "savings"] as const;
+const categoryGroups = ["needs", "wants", "savings", "income"] as const;
 const editablePaymentMethodTypes = [
   "bank",
   "boleto",
@@ -438,7 +439,10 @@ const editablePaymentMethodTypes = [
 ] as const;
 const transactionKinds = ["expense", "income", "saving"] as const;
 
-const groupColors = GROUP_COLORS;
+const groupColors = {
+  ...GROUP_COLORS,
+  income: "#15803D",
+} as const satisfies Record<TransactionGroup, string>;
 
 const groupIcons = {
   income: "💼",
@@ -784,17 +788,23 @@ function getUserCreatedMonth(userCreatedAt: string | null) {
   return userCreatedDate.slice(0, 7);
 }
 
-async function assertUserCategory(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  userId: string,
-  categoryId: string | null,
-) {
+async function assertUserCategory({
+  supabase,
+  userId,
+  categoryId,
+  transactionType,
+}: {
+  supabase: Awaited<ReturnType<typeof createClient>>;
+  userId: string;
+  categoryId: string | null;
+  transactionType?: TransactionType;
+}) {
   if (!categoryId) return;
   assertUuid(categoryId, "Category");
 
   const { data, error } = await supabase
     .from("categories")
-    .select("id")
+    .select("id, group_type")
     .eq("id", categoryId)
     .eq("user_id", userId)
     .maybeSingle();
@@ -805,6 +815,18 @@ async function assertUserCategory(
 
   if (!data) {
     throw new Error("Category is invalid.");
+  }
+
+  if (transactionType) {
+    const compatibleGroups: Record<TransactionType, TransactionGroup[]> = {
+      expense: ["needs", "wants"],
+      income: ["income"],
+      saving: ["savings"],
+    };
+    const group = (data as Pick<CategoryRow, "group_type">).group_type;
+    if (!compatibleGroups[transactionType].includes(group)) {
+      throw new Error("Category does not match the transaction type.");
+    }
   }
 }
 
@@ -1156,30 +1178,25 @@ export async function listCategoryOverview(
   const categories = await listCategories({ userContext: ctx });
   const transactions = await listTransactions({ month, userContext: ctx });
 
-  return categories
-    .filter(
-      (category): category is CategoryRow & { group_type: DbCategoryGroup } =>
-        category.group_type !== "income",
-    )
-    .map((category) => {
-      const label = toCategoryLabelKey(category.name, category.is_default);
-      const spent = transactions
-        .filter((transaction) => transaction.categoryId === category.id)
-        .reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0);
+  return categories.map((category) => {
+    const label = toCategoryLabelKey(category.name, category.is_default);
+    const spent = transactions
+      .filter((transaction) => transaction.categoryId === category.id)
+      .reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0);
 
-      return {
-        color: groupColors[category.group_type],
-        canModify: true,
-        group: category.group_type,
-        icon: toCategoryIcon(category.name, category.icon),
-        id: category.id,
-        isDefault: Boolean(category.is_default),
-        label,
-        monthlyLimit: Number(category.monthly_limit ?? 0),
-        name: category.name,
-        spent,
-      };
-    });
+    return {
+      color: groupColors[category.group_type],
+      canModify: true,
+      group: category.group_type,
+      icon: toCategoryIcon(category.name, category.icon),
+      id: category.id,
+      isDefault: Boolean(category.is_default),
+      label,
+      monthlyLimit: Number(category.monthly_limit ?? 0),
+      name: category.name,
+      spent,
+    };
+  });
 }
 
 async function listPaymentMethods(options?: {
@@ -1666,8 +1683,7 @@ function resolveNewTransactionInput(
   const amount = Math.abs(input.amount);
   assertPositiveFiniteAmount(amount, "Amount");
   const kind = resolveNewTransactionKind(input.type);
-  const categoryId =
-    kind === "income" ? null : normalizeNullableId(input.category, "Category");
+  const categoryId = normalizeNullableId(input.category, "Category");
   const paymentMethodId = normalizeNullableId(
     input.paymentMethod,
     "Payment method",
@@ -1868,7 +1884,12 @@ export async function createTransaction(input: NewTransactionInput) {
   const { createdAt, supabase, userId } = await getUserContext();
   const resolved = resolveNewTransactionInput(input);
   await Promise.all([
-    assertUserCategory(supabase, userId, resolved.categoryId),
+    assertUserCategory({
+      supabase,
+      userId,
+      categoryId: resolved.categoryId,
+      transactionType: resolved.kind,
+    }),
     assertUserPaymentMethod(supabase, userId, resolved.paymentMethodId),
   ]);
   assertValidInstallmentCount(resolved.installmentCount);
@@ -2090,7 +2111,7 @@ export async function createSubscription(input: CreateSubscriptionInput) {
   assertValidIsoDate(date);
   assertDateNotBeforeUserCreated(date, createdAt);
   await Promise.all([
-    assertUserCategory(supabase, userId, categoryId),
+    assertUserCategory({ supabase, userId, categoryId }),
     assertUserPaymentMethod(supabase, userId, paymentMethodId),
   ]);
 
@@ -2300,7 +2321,7 @@ export async function updateSubscription(input: UpdateSubscriptionInput) {
   );
 
   await Promise.all([
-    assertUserCategory(supabase, userId, categoryId),
+    assertUserCategory({ supabase, userId, categoryId }),
     assertUserPaymentMethod(supabase, userId, paymentMethodId),
   ]);
 
@@ -2599,7 +2620,11 @@ export async function updateCategory(input: UpdateCategoryInput) {
     throw new Error("Category monthly limit is invalid.");
   }
 
-  const { supabase, userId } = await getCategoryForMutation(input.id);
+  const { category, supabase, userId } = await getCategoryForMutation(input.id);
+
+  if (category.group_type !== input.group) {
+    throw new Error("Category group cannot be changed.");
+  }
 
   const { error } = await supabase
     .from("categories")
@@ -2647,10 +2672,7 @@ function resolveUpdateTransactionInput(
     throw new Error("Transaction type is invalid.");
   }
 
-  const categoryId =
-    input.type === "income" || input.category === "none"
-      ? null
-      : input.category;
+  const categoryId = input.category === "none" ? null : input.category;
   const paymentMethodId =
     input.paymentMethod === "none" ? null : input.paymentMethod;
 
@@ -2671,7 +2693,12 @@ export async function updateTransaction(input: UpdateTransactionInput) {
     resolveUpdateTransactionInput(input, createdAt);
 
   await Promise.all([
-    assertUserCategory(supabase, userId, categoryId),
+    assertUserCategory({
+      supabase,
+      userId,
+      categoryId,
+      transactionType: kind,
+    }),
     assertUserPaymentMethod(supabase, userId, paymentMethodId),
   ]);
 

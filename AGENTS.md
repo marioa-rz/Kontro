@@ -20,6 +20,7 @@ This file is the project map. Keep it short: load only the skill that matches th
 | Income, expenses, debts, savings, balances, cards, categories, financial calculations | `skills/kontro-finance-domain/SKILL.md` |
 | PostgreSQL schema, Supabase Auth, migrations, RLS, RPCs, indexes, data privacy        | `skills/kontro-supabase-data/SKILL.md`  |
 | Next.js route, React UI, Server Action, form, chart, accessibility, i18n              | `skills/kontro-nextjs-feature/SKILL.md` |
+| UX/UI, visual hierarchy, dashboard density, responsive layout, design tokens          | `skills/kontro-ux-ui/SKILL.md`          |
 | Tests, regression checks, CI failures, quality gates, review readiness                | `skills/kontro-quality/SKILL.md`        |
 | Git, branches, commits, pull requests, releases, Vercel or environment promotion      | `skills/kontro-delivery/SKILL.md`       |
 

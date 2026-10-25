@@ -39,6 +39,7 @@ type NewCategoryDialogProps = {
   };
   readonly children?: ReactNode;
   readonly createCategoryAction: (data: CreateCategoryInput) => Promise<void>;
+  readonly defaultGroup?: CategoryGroup;
   readonly onCreated?: () => void;
   readonly open?: boolean;
   readonly onOpenChange?: (open: boolean) => void;
@@ -47,7 +48,7 @@ type NewCategoryDialogProps = {
 
 type CategoryGroup = CreateCategoryInput["group"];
 
-const groupOptions: CategoryGroup[] = ["needs", "wants", "savings"];
+const groupOptions: CategoryGroup[] = ["needs", "wants", "savings", "income"];
 const emojiOptions = [
   { emoji: "🏠", label: "Moradia" },
   { emoji: "🛒", label: "Mercado" },
@@ -76,9 +77,10 @@ type CategoryFormDefaults = {
 
 function getCategoryFormDefaults(
   category: NewCategoryDialogProps["category"],
+  defaultGroup: CategoryGroup = "needs",
 ): CategoryFormDefaults {
   if (!category) {
-    return { group: "needs", icon: "🏷️", monthlyLimit: 0, name: "" };
+    return { group: defaultGroup, icon: "🏷️", monthlyLimit: 0, name: "" };
   }
 
   return {
@@ -103,7 +105,7 @@ function buildCategoryPayload(
   return {
     group: defaults.group,
     icon: defaults.icon,
-    monthlyLimit: defaults.monthlyLimit,
+    monthlyLimit: defaults.group === "income" ? 0 : defaults.monthlyLimit,
     name,
   };
 }
@@ -172,6 +174,7 @@ function CategoryIconPicker({ icon, setIcon }: CategoryIconPickerProps) {
 
 type CategoryGroupAndLimitFieldsProps = {
   readonly group: CategoryGroup;
+  readonly isGroupLocked: boolean;
   readonly monthlyLimit: number;
   readonly setGroup: (group: CategoryGroup) => void;
   readonly setMonthlyLimit: (monthlyLimit: number) => void;
@@ -179,6 +182,7 @@ type CategoryGroupAndLimitFieldsProps = {
 
 function CategoryGroupAndLimitFields({
   group,
+  isGroupLocked,
   monthlyLimit,
   setGroup,
   setMonthlyLimit,
@@ -190,6 +194,7 @@ function CategoryGroupAndLimitFields({
       <div className="space-y-2">
         <Label>{t("category.group")}</Label>
         <Select
+          disabled={isGroupLocked}
           value={group}
           onValueChange={(value) => setGroup(value as CategoryGroup)}
         >
@@ -206,15 +211,17 @@ function CategoryGroupAndLimitFields({
         </Select>
       </div>
 
-      <div className="space-y-2">
-        <CurrencyInput
-          id="category-limit"
-          label={t("category.monthlyLimit")}
-          value={monthlyLimit}
-          onValueChange={setMonthlyLimit}
-          labelClassName="normal-case tracking-normal text-foreground"
-        />
-      </div>
+      {group !== "income" ? (
+        <div className="space-y-2">
+          <CurrencyInput
+            id="category-limit"
+            label={t("category.monthlyLimit")}
+            value={monthlyLimit}
+            onValueChange={setMonthlyLimit}
+            labelClassName="normal-case tracking-normal text-foreground"
+          />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -280,6 +287,7 @@ function CategoryDialogFooter({
 
 function useCategoryFormFields(
   category: NewCategoryDialogProps["category"],
+  defaultGroup: CategoryGroup,
   open: boolean,
 ) {
   const [icon, setIcon] = useState("🏷️");
@@ -288,7 +296,7 @@ function useCategoryFormFields(
   const [monthlyLimit, setMonthlyLimit] = useState(0);
 
   const resetForm = () => {
-    const defaults = getCategoryFormDefaults(category);
+    const defaults = getCategoryFormDefaults(category, defaultGroup);
     setIcon(defaults.icon);
     setName(defaults.name);
     setGroup(defaults.group);
@@ -300,7 +308,7 @@ function useCategoryFormFields(
       resetForm();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, category]);
+  }, [open, category, defaultGroup]);
 
   return {
     icon,
@@ -417,6 +425,7 @@ function useCategorySubmitHandler({
 function useCategoryDialogController({
   category,
   createCategoryAction,
+  defaultGroup = "needs",
   onCreated,
   open: controlledOpen,
   onOpenChange,
@@ -431,7 +440,7 @@ function useCategoryDialogController({
       setInternalOpen(nextOpen);
     };
 
-  const fields = useCategoryFormFields(category, open);
+  const fields = useCategoryFormFields(category, defaultGroup, open);
 
   const { isSaving, handleSubmit, t } = useCategorySubmitHandler({
     category,
@@ -476,6 +485,7 @@ export function NewCategoryDialog(props: NewCategoryDialogProps) {
           <CategoryIconPicker icon={icon} setIcon={setIcon} />
           <CategoryGroupAndLimitFields
             group={group}
+            isGroupLocked={isEditing}
             monthlyLimit={monthlyLimit}
             setGroup={setGroup}
             setMonthlyLimit={setMonthlyLimit}

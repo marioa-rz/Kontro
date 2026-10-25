@@ -17,6 +17,8 @@ This matrix is the product source of truth for the initial discovery. “Partial
 | Available money after expenses                                                                                                                   | Partial                | Define cash accounts, transfers, savings, and debt-payment semantics.                                               |
 | Monthly income/spending/debt/savings summary                                                                                                     | Partial                | Present the four dimensions separately and prevent double counting.                                                 |
 | Charts showing highest spending                                                                                                                  | Covered                | Extend filters, accessible summaries, and category drill-down.                                                      |
+| Editable income and savings categories                                                                                                           | Covered                | Users can create, rename, regroup, and delete categories while existing movements remain preserved.                 |
+| Results-first dashboard                                                                                                                          | Covered                | Shows actual income by source, category budget balances, and credit-card payoff amounts without chart-first UI.     |
 
 ## Initial delivery slices
 
@@ -41,6 +43,7 @@ This matrix is the product source of truth for the initial discovery. “Partial
 - Implemented: Kontro runtime branding, `es-GT` as the default locale, GTQ as the default currency, and `America/Guatemala` as the reporting timezone.
 - Implemented: Guatemala-oriented categories and payment methods for newly created users through migration `011`.
 - Implemented: complete Spanish (`es-GT`) copy for authentication, navigation, dashboard, transactions, categories, budgets, payments, goals, reports, settings, exports, and accessible daily-spending summaries.
+- Implemented: editable income/savings categories and a results-first dashboard focused on real budget, income, and credit-card debt amounts.
 - Implemented: versioned Spanish Supabase Auth templates for confirmation, recovery, magic-link, invitation, and email-change messages.
 - Remaining: apply the versioned email templates to each hosted Supabase environment and replace the inherited temporary icon with a final Kontro visual identity.
 

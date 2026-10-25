@@ -38,7 +38,10 @@ const INVOICE_CREDIT_CARD_ID = "77777777-7777-4777-8777-777777777777";
 // to Supabase for the multi-row installment insert path.
 function qb(
   response: { data?: unknown; error?: unknown },
-  hooks: { onInsert?: (rows: unknown) => void; onUpdate?: (payload: unknown) => void } = {},
+  hooks: {
+    onInsert?: (rows: unknown) => void;
+    onUpdate?: (payload: unknown) => void;
+  } = {},
 ) {
   const builder: Record<string, unknown> = {};
   const chain = () => builder;
@@ -66,8 +69,10 @@ function qb(
       hooks.onUpdate?.(payload);
       return builder;
     },
-    then: (resolve: (value: unknown) => void, reject: (reason: unknown) => void) =>
-      Promise.resolve(response).then(resolve, reject),
+    then: (
+      resolve: (value: unknown) => void,
+      reject: (reason: unknown) => void,
+    ) => Promise.resolve(response).then(resolve, reject),
   });
   return builder;
 }
@@ -96,7 +101,10 @@ function makeSupabase(
   };
 }
 
-function setup(fromResponses: unknown[] = [], opts: { createdAt?: string | null } = {}) {
+function setup(
+  fromResponses: unknown[] = [],
+  opts: { createdAt?: string | null } = {},
+) {
   const supabase = makeSupabase(fromResponses, opts);
   vi.mocked(createClient).mockResolvedValue(supabase as never);
   return supabase;
@@ -116,6 +124,31 @@ describe("createTransaction", () => {
     installmentCount: 1,
     description: "Groceries",
   };
+
+  it("stores the selected category for an income transaction", async () => {
+    let inserted: unknown;
+    setup([
+      qb({ data: { group_type: "income", id: CATEGORY_ID }, error: null }),
+      qb(
+        { error: null },
+        {
+          onInsert: (rows) => {
+            inserted = rows;
+          },
+        },
+      ),
+    ]);
+
+    await createTransaction({
+      ...validInput,
+      type: "income",
+      category: CATEGORY_ID,
+    });
+
+    expect(inserted).toEqual([
+      expect.objectContaining({ category_id: CATEGORY_ID, kind: "income" }),
+    ]);
+  });
 
   it("throws for an empty description", async () => {
     setup([]);
@@ -194,6 +227,16 @@ describe("createTransaction", () => {
     ).rejects.toThrow("Unable to validate category: category boom");
   });
 
+  it("rejects a category whose group does not match the transaction type", async () => {
+    setup([
+      qb({ data: { group_type: "income", id: CATEGORY_ID }, error: null }),
+    ]);
+
+    await expect(
+      createTransaction({ ...validInput, category: CATEGORY_ID }),
+    ).rejects.toThrow("Category does not match the transaction type.");
+  });
+
   it("throws when validating the payment method errors", async () => {
     setup([qb({ data: null, error: { message: "pm boom" } })]);
     await expect(
@@ -205,12 +248,15 @@ describe("createTransaction", () => {
     ["a non-integer", 2.5],
     ["below 1", 0],
     ["above 120", 121],
-  ])("throws for an installment count that is %s", async (_label, installmentCount) => {
-    setup([]);
-    await expect(
-      createTransaction({ ...validInput, installmentCount }),
-    ).rejects.toThrow("Installment count is invalid.");
-  });
+  ])(
+    "throws for an installment count that is %s",
+    async (_label, installmentCount) => {
+      setup([]);
+      await expect(
+        createTransaction({ ...validInput, installmentCount }),
+      ).rejects.toThrow("Installment count is invalid.");
+    },
+  );
 
   it("converts a dd/MM/yyyy date to ISO before saving", async () => {
     let captured: unknown;
@@ -278,10 +324,9 @@ describe("createTransaction", () => {
 
   it("does not filter any occurrence when the user's created_at is unparseable", async () => {
     let captured: unknown;
-    setup(
-      [qb({ error: null }, { onInsert: (rows) => (captured = rows) })],
-      { createdAt: "not-a-real-date" },
-    );
+    setup([qb({ error: null }, { onInsert: (rows) => (captured = rows) })], {
+      createdAt: "not-a-real-date",
+    });
     await expect(createTransaction(validInput)).resolves.toBeUndefined();
     expect(Array.isArray(captured) && captured.length).toBe(1);
   });
@@ -297,10 +342,9 @@ describe("createTransaction", () => {
 
   it("drops only the occurrences before the user creation month", async () => {
     let captured: unknown;
-    setup(
-      [qb({ error: null }, { onInsert: (rows) => (captured = rows) })],
-      { createdAt: "2030-02-01T00:00:00.000Z" },
-    );
+    setup([qb({ error: null }, { onInsert: (rows) => (captured = rows) })], {
+      createdAt: "2030-02-01T00:00:00.000Z",
+    });
     await expect(
       createTransaction({
         ...validInput,
@@ -524,9 +568,12 @@ describe("updateTransaction", () => {
   it("updates a transaction with a real category and payment method", async () => {
     let capturedPayload: unknown;
     setup([
-      qb({ data: { id: CATEGORY_ID }, error: null }),
+      qb({ data: { group_type: "needs", id: CATEGORY_ID }, error: null }),
       qb({ data: { id: PAYMENT_METHOD_ID }, error: null }),
-      qb({ error: null }, { onUpdate: (payload) => (capturedPayload = payload) }),
+      qb(
+        { error: null },
+        { onUpdate: (payload) => (capturedPayload = payload) },
+      ),
     ]);
     await expect(
       updateTransaction({
@@ -680,10 +727,7 @@ describe("deleteInstallments", () => {
   });
 
   it("delegates to deleteTransaction when the transaction is not an installment", async () => {
-    setup([
-      qb({ data: nonInstallmentRow, error: null }),
-      qb({ error: null }),
-    ]);
+    setup([qb({ data: nonInstallmentRow, error: null }), qb({ error: null })]);
     await expect(
       deleteInstallments({
         scope: "all",

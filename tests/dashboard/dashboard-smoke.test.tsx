@@ -45,6 +45,7 @@ const translations: Record<string, string> = {
   "dashboard.summary.totalExpenses": "Total Expenses",
   "dashboard.summary.totalIncome": "Total Income",
   "dashboard.summary.totalSaved": "Total Saved",
+  "screen.budgets.rule": "50/30/20 rule",
   "data.category.health": "Health",
   "data.category.shopping": "Shopping",
   "data.group.needs": "Needs",
@@ -121,15 +122,20 @@ describe("dashboard component rendering", () => {
 
     expect(html).toContain("Total Income");
     expect(html).toContain("Predicted");
-    expect(html).toContain("+50.0%");
-    expect(html).toContain("-25.0%");
+    expect(html).not.toContain("+50.0%");
+    expect(html).not.toContain("-25.0%");
   });
 
-  it("renders budget progress for every 50/30/20 group", () => {
+  it("renders budget progress without the 50/30/20 pie chart", () => {
     const html = renderWithI18n(
       <BudgetsScreen
         budgetData={{
-          needs: { budget: 1000, percentage: 40, plannedSpent: 500, spent: 400 },
+          needs: {
+            budget: 1000,
+            percentage: 40,
+            plannedSpent: 500,
+            spent: 400,
+          },
           savings: {
             budget: 400,
             percentage: 100,
@@ -151,7 +157,8 @@ describe("dashboard component rendering", () => {
     expect(html).toContain("Needs");
     expect(html).toContain("Wants");
     expect(html).toContain("Savings");
-    expect(html).toContain("125% used");
+    expect(html).not.toContain("% used");
+    expect(html).not.toContain("50/30/20 rule");
   });
 
   it("renders budget split with income base and over-budget status", () => {
@@ -471,8 +478,18 @@ describe("dashboard component rendering", () => {
     const html = renderWithI18n(
       <BudgetsScreen
         budgetData={{
-          needs: { budget: 1000, percentage: 60, plannedSpent: 600, spent: 600 },
-          savings: { budget: 400, percentage: 50, plannedSpent: 200, spent: 200 },
+          needs: {
+            budget: 1000,
+            percentage: 60,
+            plannedSpent: 600,
+            spent: 600,
+          },
+          savings: {
+            budget: 400,
+            percentage: 50,
+            plannedSpent: 200,
+            spent: 200,
+          },
           wants: { budget: 600, percentage: 58, plannedSpent: 350, spent: 350 },
         }}
         budgetSplitData={[]}
@@ -490,14 +507,43 @@ describe("dashboard component rendering", () => {
     const html = renderWithI18n(
       <BudgetsScreen
         budgetData={{
-          needs: { budget: 1000, percentage: 120, plannedSpent: 1200, spent: 1200 },
-          savings: { budget: 400, percentage: 100, plannedSpent: 400, spent: 400 },
-          wants: { budget: 600, percentage: 110, plannedSpent: 660, spent: 660 },
+          needs: {
+            budget: 1000,
+            percentage: 120,
+            plannedSpent: 1200,
+            spent: 1200,
+          },
+          savings: {
+            budget: 400,
+            percentage: 100,
+            plannedSpent: 400,
+            spent: 400,
+          },
+          wants: {
+            budget: 600,
+            percentage: 110,
+            plannedSpent: 660,
+            spent: 660,
+          },
         }}
         budgetSplitData={[]}
         categories={[
-          { color: "#f00", icon: "🏠", id: "c1", label: "data.category.health", monthlyLimit: 500, spent: 600 },
-          { color: "#0f0", icon: "🛍️", id: "c2", label: "data.category.shopping", monthlyLimit: 500, spent: 200 },
+          {
+            color: "#f00",
+            icon: "🏠",
+            id: "c1",
+            label: "data.category.health",
+            monthlyLimit: 500,
+            spent: 600,
+          },
+          {
+            color: "#0f0",
+            icon: "🛍️",
+            id: "c2",
+            label: "data.category.shopping",
+            monthlyLimit: 500,
+            spent: 200,
+          },
         ]}
       />,
     );
@@ -509,14 +555,48 @@ describe("dashboard component rendering", () => {
     const html = renderWithI18n(
       <BudgetsScreen
         budgetData={{
-          needs: { budget: 1000, percentage: 50, plannedSpent: 500, spent: 500 },
-          savings: { budget: 400, percentage: 50, plannedSpent: 200, spent: 200 },
+          needs: {
+            budget: 1000,
+            percentage: 50,
+            plannedSpent: 500,
+            spent: 500,
+          },
+          savings: {
+            budget: 400,
+            percentage: 50,
+            plannedSpent: 200,
+            spent: 200,
+          },
           wants: { budget: 600, percentage: 50, plannedSpent: 300, spent: 300 },
         }}
         budgetSplitData={[
-          { amount: 500, color: "#22C55E", maxAmount: 1000, nameKey: "data.group.needs", plannedSpentAmount: 500, spentAmount: 500, value: 50 },
-          { amount: 200, color: "#FFC38A", maxAmount: 400, nameKey: "data.group.wants", plannedSpentAmount: 200, spentAmount: 200, value: 30 },
-          { amount: 150, color: "#2563EB", maxAmount: 400, nameKey: "data.group.savings", plannedSpentAmount: 150, spentAmount: 150, value: 20 },
+          {
+            amount: 500,
+            color: "#22C55E",
+            maxAmount: 1000,
+            nameKey: "data.group.needs",
+            plannedSpentAmount: 500,
+            spentAmount: 500,
+            value: 50,
+          },
+          {
+            amount: 200,
+            color: "#FFC38A",
+            maxAmount: 400,
+            nameKey: "data.group.wants",
+            plannedSpentAmount: 200,
+            spentAmount: 200,
+            value: 30,
+          },
+          {
+            amount: 150,
+            color: "#2563EB",
+            maxAmount: 400,
+            nameKey: "data.group.savings",
+            plannedSpentAmount: 150,
+            spentAmount: 150,
+            value: 20,
+          },
         ]}
         categories={[]}
       />,

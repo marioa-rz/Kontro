@@ -92,7 +92,7 @@ function CategoryCardActions({
           id: category.id,
           monthlyLimit: category.monthlyLimit,
           name: category.name,
-          showName: !category.isDefault,
+          showName: true,
         }}
         createCategoryAction={createCategoryAction}
         updateCategoryAction={updateCategoryAction}
@@ -144,8 +144,26 @@ type CategoryCardBudgetProps = {
   readonly category: CategoryOverviewItem;
 };
 
+function IncomeCategoryAmount({ category }: CategoryCardBudgetProps) {
+  const { formatCurrency, t } = useI18n();
+  return (
+    <div className="flex items-center justify-between rounded-lg bg-income/10 px-3 py-2">
+      <span className="text-sm text-muted-foreground">
+        {t("category.receivedThisMonth")}
+      </span>
+      <span className="font-semibold text-income">
+        {formatCurrency(category.spent)}
+      </span>
+    </div>
+  );
+}
+
 function CategoryCardBudget({ category }: CategoryCardBudgetProps) {
   const { formatCurrency, t } = useI18n();
+
+  if (category.group === "income") {
+    return <IncomeCategoryAmount category={category} />;
+  }
 
   if (category.monthlyLimit <= 0) {
     return (
@@ -290,11 +308,22 @@ function CategoriesHeader({
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-        <TabsList className="grid w-full max-w-xl grid-cols-4">
-          <TabsTrigger value="all">{t("common.all")}</TabsTrigger>
-          <TabsTrigger value="needs">{t("data.group.needs")}</TabsTrigger>
-          <TabsTrigger value="wants">{t("data.group.wants")}</TabsTrigger>
-          <TabsTrigger value="savings">{t("data.group.savings")}</TabsTrigger>
+        <TabsList className="flex h-auto w-full max-w-2xl flex-wrap justify-start">
+          <TabsTrigger className="min-h-11 flex-1" value="all">
+            {t("common.all")}
+          </TabsTrigger>
+          <TabsTrigger className="min-h-11 flex-1" value="needs">
+            {t("data.group.needs")}
+          </TabsTrigger>
+          <TabsTrigger className="min-h-11 flex-1" value="wants">
+            {t("data.group.wants")}
+          </TabsTrigger>
+          <TabsTrigger className="min-h-11 flex-1" value="savings">
+            {t("data.group.savings")}
+          </TabsTrigger>
+          <TabsTrigger className="min-h-11 flex-1" value="income">
+            {t("data.group.income")}
+          </TabsTrigger>
         </TabsList>
       </Tabs>
     </>

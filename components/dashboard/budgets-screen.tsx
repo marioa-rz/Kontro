@@ -3,14 +3,6 @@
 import { useMemo, useState } from "react";
 
 import { Download, Minus, TrendingDown, TrendingUp } from "lucide-react";
-import {
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-} from "recharts";
 
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
@@ -142,18 +134,10 @@ function downloadBudgetCsv({
 
 function useBudgetsScreenState({
   budgetData,
-  budgetSplitData,
-}: Pick<BudgetsScreenProps, "budgetData" | "budgetSplitData">) {
+}: Pick<BudgetsScreenProps, "budgetData">) {
   const { t } = useI18n();
   const [includePlanned, setIncludePlanned] = useState(false);
   const totals = buildBudgetTotals(budgetData);
-  const chartData = useMemo(
-    () => budgetSplitData.map((item) => ({ ...item, name: t(item.nameKey) })),
-    [budgetSplitData, t],
-  );
-  /* c8 ignore next */
-  const pieTooltipFormatter = (value: unknown) =>
-    [`${value}%`, t("screen.budgets.monthlyAllocation")] as [string, string];
   const budgetGroups = useMemo(
     () => buildBudgetGroups(budgetData, t),
     [budgetData, t],
@@ -165,8 +149,6 @@ function useBudgetsScreenState({
     includePlanned,
     setIncludePlanned,
     ...totals,
-    chartData,
-    pieTooltipFormatter,
     budgetGroups,
     downloadCsv,
   };
@@ -296,57 +278,6 @@ function BudgetsToolbar({
   );
 }
 
-function BudgetsPieCard({
-  chartData,
-  pieTooltipFormatter,
-  t,
-}: {
-  readonly chartData: (BudgetSplitItem & { name: string })[];
-  readonly pieTooltipFormatter: (value: unknown) => [string, string];
-  readonly t: (key: string) => string;
-}) {
-  return (
-    <Card className="border-border bg-card card-shadow">
-      <CardHeader>
-        <CardTitle className="text-lg">{t("screen.budgets.rule")}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="h-64 min-h-0 min-w-0">
-          <ResponsiveContainer
-            width="100%"
-            height="100%"
-            minWidth={0}
-            minHeight={0}
-            initialDimension={{ width: 1, height: 256 }}
-          >
-            <PieChart>
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={90}
-                paddingAngle={4}
-                dataKey="value"
-              >
-                {chartData.map((entry) => (
-                  <Cell
-                    key={entry.nameKey}
-                    fill={entry.color}
-                    className="stroke-card stroke-2"
-                  />
-                ))}
-              </Pie>
-              <Tooltip formatter={pieTooltipFormatter} />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 function getBudgetGroupTrend(usage: ReturnType<typeof calculateBudgetUsage>) {
   if (usage.isOverBudget || usage.usagePercentage > 80) return "over" as const;
   if (usage.usagePercentage > 50) return "normal" as const;
@@ -407,7 +338,7 @@ function BudgetGroupStatus({
         {trend === "over" && <TrendingUp className="size-3" />}
         {trend === "under" && <TrendingDown className="size-3" />}
         {trend === "normal" && <Minus className="size-3" />}
-        {usage.usagePercentage}% {t("common.used")}
+        {t("common.spent")}: {formatCurrency(usage.spentAmount)}
       </span>
       <span
         className={cn(
@@ -580,13 +511,9 @@ function CategoryBudgetsCard({
   );
 }
 
-export function BudgetsScreen({
-  budgetData,
-  budgetSplitData,
-  categories,
-}: BudgetsScreenProps) {
+export function BudgetsScreen({ budgetData, categories }: BudgetsScreenProps) {
   const { formatCurrency, t } = useI18n();
-  const state = useBudgetsScreenState({ budgetData, budgetSplitData });
+  const state = useBudgetsScreenState({ budgetData });
 
   return (
     <>
@@ -598,8 +525,7 @@ export function BudgetsScreen({
       <BudgetsSummaryCards {...state} formatCurrency={formatCurrency} t={t} />
       <BudgetsToolbar {...state} t={t} />
 
-      <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <BudgetsPieCard {...state} t={t} />
+      <div className="mb-6">
         <BudgetGroupsCard {...state} formatCurrency={formatCurrency} t={t} />
       </div>
 

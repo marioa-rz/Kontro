@@ -17,7 +17,7 @@ import { NumberCounter } from "@/components/ui/number-counter";
 
 const COLOR_POSITIVE = "#22C55E";
 const COLOR_NEGATIVE = "#EF4444";
-const COLOR_SAVINGS  = "#8B5CF6";
+const COLOR_SAVINGS = "#8B5CF6";
 
 function cardColor(hex: string) {
   return { color: hex, bg: `${hex}1A` };
@@ -29,7 +29,6 @@ type SummaryCard = {
   icon: LucideIcon;
   color: string;
   bg: string;
-  trend?: number;
   note?: { key: string; value: number };
 };
 
@@ -37,28 +36,16 @@ interface SummaryCardItemProps {
   card: SummaryCard;
   index: number;
   formatCurrency: (value: number) => string;
-  formatTrend: (value: number) => string;
   t: (key: string) => string;
 }
 
-function SummaryCardHeader({
-  card,
-  formatTrend,
-}: Pick<SummaryCardItemProps, "card" | "formatTrend">) {
+function SummaryCardHeader({ card }: Pick<SummaryCardItemProps, "card">) {
   const Icon = card.icon;
   return (
     <div className="flex items-start justify-between">
       <div className="p-2 lg:p-3 rounded-xl" style={{ background: card.bg }}>
         <Icon className="w-4 h-4 lg:w-5 lg:h-5" style={{ color: card.color }} />
       </div>
-      {typeof card.trend === "number" ? (
-        <span
-          className="text-xs font-medium px-2 py-1 rounded-full"
-          style={{ background: card.bg, color: card.color }}
-        >
-          {formatTrend(card.trend)}
-        </span>
-      ) : null}
     </div>
   );
 }
@@ -67,14 +54,13 @@ function SummaryCardItem({
   card,
   index,
   formatCurrency,
-  formatTrend,
   t,
 }: SummaryCardItemProps) {
   return (
     <AnimatedCard index={index} className="h-full">
       <Card className="bg-card border-border overflow-hidden card-shadow h-full">
         <CardContent className="p-4 lg:p-6">
-          <SummaryCardHeader card={card} formatTrend={formatTrend} />
+          <SummaryCardHeader card={card} />
           <div className="mt-3 lg:mt-4">
             <p className="text-xs lg:text-sm text-muted-foreground">
               {t(card.titleKey)}
@@ -117,14 +103,12 @@ function buildSummaryCards(summaryData: SummaryData): SummaryCard[] {
       titleKey: "dashboard.summary.totalIncome",
       value: summaryData.totalIncome,
       icon: TrendingUp,
-      trend: summaryData.trends.totalIncome,
       ...cardColor(COLOR_POSITIVE),
     },
     {
       titleKey: "dashboard.summary.totalExpenses",
       value: summaryData.totalExpenses,
       icon: TrendingDown,
-      trend: summaryData.trends.totalExpenses,
       note: {
         key: "dashboard.summary.predictedExpenses",
         value: summaryData.predictedExpenses,
@@ -135,7 +119,6 @@ function buildSummaryCards(summaryData: SummaryData): SummaryCard[] {
       titleKey: "dashboard.summary.totalSaved",
       value: summaryData.totalSaved,
       icon: PiggyBank,
-      trend: summaryData.trends.totalSaved,
       ...cardColor(COLOR_SAVINGS),
     },
     {
@@ -147,10 +130,11 @@ function buildSummaryCards(summaryData: SummaryData): SummaryCard[] {
   ];
 }
 
-export function SummaryCards({ summaryData, onAddTransaction }: SummaryCardsProps) {
+export function SummaryCards({
+  summaryData,
+  onAddTransaction,
+}: SummaryCardsProps) {
   const { formatCurrency, t } = useI18n();
-  const formatTrend = (value: number) =>
-    `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
   const cards = buildSummaryCards(summaryData);
 
   return (
@@ -162,7 +146,6 @@ export function SummaryCards({ summaryData, onAddTransaction }: SummaryCardsProp
             card={card}
             index={index}
             formatCurrency={formatCurrency}
-            formatTrend={formatTrend}
             t={t}
           />
         ))}
