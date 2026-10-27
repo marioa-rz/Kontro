@@ -124,11 +124,13 @@ function BudgetFocusCard({ data }: { data: DashboardFocusData }) {
   const { t } = useI18n();
   return (
     <Card className="border-border bg-card card-shadow">
-      <CardHeader className="flex-row items-center gap-3">
+      <CardHeader className="grid-cols-[auto_1fr] grid-rows-1 items-center gap-3">
         <span className="rounded-xl bg-primary/10 p-2 text-primary">
           <WalletCards className="size-5" />
         </span>
-        <CardTitle>{t("dashboard.focus.budgetTitle")}</CardTitle>
+        <CardTitle className="leading-snug">
+          {t("dashboard.focus.budgetTitle")}
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {data.budgets.length ? (
@@ -149,11 +151,13 @@ function DebtFocusCard({ data }: { data: DashboardFocusData }) {
   const { t } = useI18n();
   return (
     <Card className="border-border bg-card card-shadow">
-      <CardHeader className="flex-row items-center gap-3">
+      <CardHeader className="grid-cols-[auto_1fr] grid-rows-1 items-center gap-3">
         <span className="rounded-xl bg-destructive/10 p-2 text-destructive">
           <Landmark className="size-5" />
         </span>
-        <CardTitle>{t("dashboard.focus.debtTitle")}</CardTitle>
+        <CardTitle className="leading-snug">
+          {t("dashboard.focus.debtTitle")}
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {data.debts.length ? (
@@ -174,11 +178,13 @@ function IncomeFocusCard({ data }: { data: DashboardFocusData }) {
   const { formatCurrency, t } = useI18n();
   return (
     <Card className="border-border bg-card card-shadow lg:col-span-2">
-      <CardHeader className="flex-row items-center gap-3">
+      <CardHeader className="grid-cols-[auto_1fr] grid-rows-1 items-center gap-3">
         <span className="rounded-xl bg-income/10 p-2 text-income">
           <TrendingUp className="size-5" />
         </span>
-        <CardTitle>{t("dashboard.focus.incomeTitle")}</CardTitle>
+        <CardTitle className="leading-snug">
+          {t("dashboard.focus.incomeTitle")}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {data.incomes.length ? (

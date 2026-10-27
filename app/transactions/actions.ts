@@ -118,12 +118,13 @@ const updatePaymentMethodActionSchema = z
     dueDay: z.number().int().min(1).max(31).nullable().optional(),
     id: uuidSchema,
     name: safeShortTextSchema,
-    type: z.enum(["bank", "boleto", "credit", "debit", "other"]),
+    type: z.enum(["bank", "boleto", "cash", "credit", "debit", "other", "pix"]),
   })
   .strict();
 
 const createPaymentMethodActionSchema = updatePaymentMethodActionSchema
-  .omit({ id: true })
+  .omit({ id: true, type: true })
+  .extend({ type: z.enum(["bank", "boleto", "credit", "debit", "other"]) })
   .strict();
 
 const createInvoiceAdvancePaymentActionSchema = z

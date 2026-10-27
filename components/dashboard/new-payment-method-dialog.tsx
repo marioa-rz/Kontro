@@ -84,7 +84,9 @@ function usePaymentMethodDialogFields(open: boolean) {
   };
 }
 
-type PaymentMethodDialogFields = ReturnType<typeof usePaymentMethodDialogFields>;
+type PaymentMethodDialogFields = ReturnType<
+  typeof usePaymentMethodDialogFields
+>;
 
 function useCreatePaymentMethodSubmit({
   fields,
@@ -230,7 +232,12 @@ function PaymentMethodCreditFields({
   t,
 }: Pick<
   PaymentMethodDialogFields,
-  "creditLimit" | "setCreditLimit" | "closingDay" | "setClosingDay" | "dueDay" | "setDueDay"
+  | "creditLimit"
+  | "setCreditLimit"
+  | "closingDay"
+  | "setClosingDay"
+  | "dueDay"
+  | "setDueDay"
 > & { t: (key: string) => string }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">

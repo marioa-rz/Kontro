@@ -65,18 +65,9 @@ function buildEditablePaymentMethod(
     creditLimit: paymentMethod.creditLimit,
     dueDay: paymentMethod.dueDay ? String(paymentMethod.dueDay) : "",
     id: paymentMethod.id,
-    name:
-      paymentMethod.isDefault || paymentMethod.label !== paymentMethod.name
-        ? ""
-        : paymentMethod.name,
+    name: paymentMethod.name,
     originalName: paymentMethod.name,
-    type:
-      paymentMethod.type === "boleto" ||
-      paymentMethod.type === "credit" ||
-      paymentMethod.type === "debit" ||
-      paymentMethod.type === "other"
-        ? paymentMethod.type
-        : "credit",
+    type: paymentMethod.type,
   };
 }
 

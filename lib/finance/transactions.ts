@@ -222,7 +222,7 @@ export type CreatePaymentMethodInput = {
   creditLimit?: number;
   dueDay?: number | null;
   name: string;
-  type: UpdatePaymentMethodInput["type"];
+  type: Exclude<UpdatePaymentMethodInput["type"], "cash" | "pix">;
 };
 
 export type CreateInvoiceAdvancePaymentInput = {
@@ -275,7 +275,7 @@ export type UpdatePaymentMethodInput = {
   dueDay?: number | null;
   id: string;
   name: string;
-  type: Exclude<PaymentMethodRow["type"], "cash" | "pix">;
+  type: PaymentMethodRow["type"];
 };
 
 export type SummaryData = {
@@ -431,6 +431,15 @@ const monthKeys = [
 
 const categoryGroups = ["needs", "wants", "savings", "income"] as const;
 const editablePaymentMethodTypes = [
+  "bank",
+  "boleto",
+  "cash",
+  "credit",
+  "debit",
+  "other",
+  "pix",
+] as const;
+const creatablePaymentMethodTypes = [
   "bank",
   "boleto",
   "credit",
@@ -597,6 +606,14 @@ function isEditablePaymentMethodType(
 ): value is UpdatePaymentMethodInput["type"] {
   return editablePaymentMethodTypes.includes(
     value as UpdatePaymentMethodInput["type"],
+  );
+}
+
+function isCreatablePaymentMethodType(
+  value: string,
+): value is CreatePaymentMethodInput["type"] {
+  return creatablePaymentMethodTypes.includes(
+    value as CreatePaymentMethodInput["type"],
   );
 }
 
@@ -1219,10 +1236,6 @@ async function listPaymentMethods(options?: {
   return (data ?? []) as PaymentMethodRow[];
 }
 
-function isProtectedPaymentMethod(paymentMethod: PaymentMethodRow) {
-  return paymentMethod.type === "cash" || paymentMethod.type === "pix";
-}
-
 async function getCategoryForMutation(categoryId: string) {
   assertUuid(categoryId, "Category");
 
@@ -1290,7 +1303,7 @@ function buildPaymentMethodOverviewItem(
   });
 
   return {
-    canModify: !isProtectedPaymentMethod(paymentMethod),
+    canModify: true,
     closingDay,
     creditLimit: Number(paymentMethod.credit_limit ?? 0),
     detail,
@@ -2387,7 +2400,7 @@ export async function createPaymentMethod(input: CreatePaymentMethodInput) {
   const closingDay =
     input.type === "credit" ? (input.closingDay ?? null) : null;
 
-  if (!isEditablePaymentMethodType(input.type)) {
+  if (!isCreatablePaymentMethodType(input.type)) {
     throw new Error("Payment method type is invalid.");
   }
 
@@ -2437,13 +2450,7 @@ export async function updatePaymentMethod(input: UpdatePaymentMethodInput) {
   assertUuid(input.id, "Payment method");
   const { name, creditLimit, dueDay, closingDay, type } =
     resolveUpdatePaymentMethodInput(input);
-  const { paymentMethod, supabase, userId } = await getPaymentMethodForMutation(
-    input.id,
-  );
-
-  if (isProtectedPaymentMethod(paymentMethod)) {
-    throw new Error("This payment method cannot be edited.");
-  }
+  const { supabase, userId } = await getPaymentMethodForMutation(input.id);
 
   const { error } = await supabase
     .from("payment_methods")
@@ -2464,12 +2471,8 @@ export async function updatePaymentMethod(input: UpdatePaymentMethodInput) {
 
 export async function deletePaymentMethod(paymentMethodId: string) {
   assertUuid(paymentMethodId, "Payment method");
-  const { paymentMethod, supabase, userId } =
+  const { supabase, userId } =
     await getPaymentMethodForMutation(paymentMethodId);
-
-  if (isProtectedPaymentMethod(paymentMethod)) {
-    throw new Error("This payment method cannot be deleted.");
-  }
 
   const { error } = await supabase
     .from("payment_methods")

@@ -758,7 +758,7 @@ describe("updatePaymentMethod", () => {
   it("throws for an invalid type", async () => {
     setup([]);
     await expect(
-      updatePaymentMethod({ ...validInput, type: "cash" as never }),
+      updatePaymentMethod({ ...validInput, type: "crypto" as never }),
     ).rejects.toThrow("Payment method type is invalid.");
   });
 
@@ -783,11 +783,15 @@ describe("updatePaymentMethod", () => {
     );
   });
 
-  it("throws for a protected payment method", async () => {
-    setup([qb({ data: paymentMethodRow({ type: "pix" }), error: null })]);
-    await expect(updatePaymentMethod(validInput)).rejects.toThrow(
-      "This payment method cannot be edited.",
-    );
+  it("updates a default cash payment method", async () => {
+    const supabase = setup([
+      qb({ data: paymentMethodRow({ type: "cash" }), error: null }),
+      qb({ error: null }),
+    ]);
+    await expect(
+      updatePaymentMethod({ ...validInput, type: "cash" }),
+    ).resolves.toBeUndefined();
+    expect(supabase.from).toHaveBeenCalledWith("payment_methods");
   });
 
   it("defaults credit limit/due day/closing day when omitted from a credit update", async () => {
@@ -843,11 +847,15 @@ describe("deletePaymentMethod", () => {
     );
   });
 
-  it("throws for a protected payment method", async () => {
-    setup([qb({ data: paymentMethodRow({ type: "cash" }), error: null })]);
-    await expect(deletePaymentMethod(PAYMENT_METHOD_ID)).rejects.toThrow(
-      "This payment method cannot be deleted.",
-    );
+  it("deletes a default cash payment method", async () => {
+    const supabase = setup([
+      qb({ data: paymentMethodRow({ type: "cash" }), error: null }),
+      qb({ error: null }),
+    ]);
+    await expect(
+      deletePaymentMethod(PAYMENT_METHOD_ID),
+    ).resolves.toBeUndefined();
+    expect(supabase.from).toHaveBeenCalledWith("payment_methods");
   });
 
   it("deletes a non-protected payment method", async () => {

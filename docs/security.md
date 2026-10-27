@@ -35,7 +35,7 @@ This document describes the current application-level security expectations. It 
 
 ## Protected payment methods
 
-Cash-type payment methods cannot be edited or deleted through the app. The legacy Pix type remains protected for compatibility with data created before Kontro's Guatemala localization.
+Every payment-method mutation is scoped to the authenticated owner. User-owned seeded methods can be edited or deleted; existing transactions retain their financial history because their payment-method reference uses `ON DELETE SET NULL`.
 
 ## LGPD and privacy
 

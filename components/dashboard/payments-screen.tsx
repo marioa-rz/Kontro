@@ -194,27 +194,27 @@ function DueDayInput({
   );
 }
 
-function PaymentMethodTypeSelect({
+function PaymentMethodTypeSelect<T extends UpdatePaymentMethodInput["type"]>({
+  options,
   value,
   onValueChange,
   t,
 }: {
-  readonly value: UpdatePaymentMethodInput["type"];
-  readonly onValueChange: (type: UpdatePaymentMethodInput["type"]) => void;
+  readonly options: readonly T[];
+  readonly value: T;
+  readonly onValueChange: (type: T) => void;
   readonly t: Translate;
 }) {
   return (
     <Select
       value={value}
-      onValueChange={(v) =>
-        onValueChange(v as UpdatePaymentMethodInput["type"])
-      }
+      onValueChange={(nextValue) => onValueChange(nextValue as T)}
     >
       <SelectTrigger className="w-full">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        {editablePaymentTypeOptions.map((type) => (
+        {options.map((type) => (
           <SelectItem key={type} value={type}>
             {t(`payments.type.${type}`)}
           </SelectItem>
@@ -263,6 +263,7 @@ function AddPaymentMethodTypeAndLimitFields({
       <div className="space-y-2">
         <Label>{t("payments.methodType")}</Label>
         <PaymentMethodTypeSelect
+          options={creatablePaymentTypeOptions}
           value={paymentMethodForm.type}
           onValueChange={(type) =>
             setPaymentMethodForm({
@@ -513,6 +514,7 @@ function EditPaymentMethodTypeSelect({
     <div className="space-y-2">
       <Label>{t("payments.methodType")}</Label>
       <PaymentMethodTypeSelect
+        options={editablePaymentTypeOptions}
         value={editingPaymentMethod.type}
         onValueChange={(type) =>
           setEditingPaymentMethod({
@@ -641,6 +643,15 @@ function EditPaymentMethodDialog({
 }
 
 const editablePaymentTypeOptions: UpdatePaymentMethodInput["type"][] = [
+  "bank",
+  "boleto",
+  "cash",
+  "credit",
+  "debit",
+  "other",
+  "pix",
+];
+const creatablePaymentTypeOptions: CreatePaymentMethodInput["type"][] = [
   "bank",
   "boleto",
   "credit",

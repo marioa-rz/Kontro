@@ -74,5 +74,7 @@ describe("FinancialFocus", () => {
     expect(html).toContain("Over budget");
     expect(html).toContain("Q50");
     expect(html).not.toContain("% used");
+    expect(html).toContain("grid-cols-[auto_1fr]");
+    expect(html).not.toContain("flex-row items-center gap-3");
   });
 });
