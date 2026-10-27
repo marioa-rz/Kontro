@@ -30,3 +30,4 @@ tsconfig.tsbuildinfo
 /test-results/
 /blob-report/
 e2e/.auth/
+.vercel
