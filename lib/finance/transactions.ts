@@ -2550,6 +2550,21 @@ export async function updateGoal(input: UpdateGoalInput) {
     createdAt,
   );
 
+  const { data: existingGoal, error: goalError } = await supabase
+    .from("goals")
+    .select("current_amount")
+    .eq("id", input.id)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (goalError) {
+    throw new Error(`Unable to load goal: ${goalError.message}`);
+  }
+  if (!existingGoal) throw new Error("Goal not found.");
+  if (targetAmount < Number(existingGoal.current_amount)) {
+    throw new Error("Target amount cannot be lower than saved progress.");
+  }
+
   const { error } = await supabase
     .from("goals")
     .update({
@@ -3635,6 +3650,9 @@ function buildDashboardBudgetContext(
   const actualBudgetTransactions = transactions.filter(
     (transaction) => !transaction.personalDebtId,
   );
+  const scheduledBudgetTransactions = scheduledTransactions.filter(
+    (transaction) => !transaction.personalDebtId,
+  );
   const trendExpenseTransactions =
     trendTransactions.filter(isConsumptionExpense);
   const scheduledExpenseTransactions =
@@ -3642,12 +3660,13 @@ function buildDashboardBudgetContext(
   const budgetData = calculateBudgetData(
     sumTransactionsByType(transactions, "income"),
     sumBudgetUsageByGroup(actualBudgetTransactions),
-    sumBudgetUsageByGroup(scheduledTransactions),
+    sumBudgetUsageByGroup(scheduledBudgetTransactions),
   );
 
   return {
     actualBudgetTransactions,
     budgetData,
+    scheduledBudgetTransactions,
     scheduledExpenseTransactions,
     trendExpenseTransactions,
   };
@@ -3703,24 +3722,23 @@ function assembleDashboardData({
   const {
     transactions,
     previousTransactions,
-    scheduledTransactions,
     displayTransactions,
     displayScheduledTransactions,
     totalSaved,
     previousTotalSaved,
-    categories,
-    paymentMethods,
   } = sourceData;
   const { scheduledExpenseTransactions, budgetData } = budgetContext;
 
   return {
     budgetData,
     budgetSplitData: buildDashboardBudgetSplitData(budgetData),
-    categories,
+    categories: sourceData.categories,
     dailyExpensesOverTime: buildDailyExpensesOverTime(
       budgetContext.actualBudgetTransactions,
     ),
-    expensesByCategory: buildExpensesByCategoryData(scheduledTransactions),
+    expensesByCategory: buildExpensesByCategoryData(
+      budgetContext.scheduledBudgetTransactions,
+    ),
     expensesOverTime: buildExpensesOverTimeData(
       monthBuckets,
       budgetContext.trendExpenseTransactions,
@@ -3735,7 +3753,7 @@ function assembleDashboardData({
       sourceData.trendTransactions,
       summaryEndDate,
     ),
-    paymentMethods,
+    paymentMethods: sourceData.paymentMethods,
     summaryData: buildDashboardSummaryData({
       transactions,
       previousTransactions,

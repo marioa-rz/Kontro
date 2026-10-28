@@ -23,11 +23,14 @@ describe("personal debts migration", () => {
     expect(migration).toContain("personal_debt_id uuid");
     expect(migration).toContain("insert into public.transactions");
     expect(migration).toContain("security definer");
+    expect(migration).toContain("set search_path = ''");
     expect(migration).toContain(
       "revoke insert, update, delete on public.personal_debt_payments from authenticated",
     );
     expect(migration).toContain("invalid goal for transaction owner");
     expect(migration).toContain("invalid personal debt for transaction owner");
+    expect(migration).toContain("revoke delete on public.personal_debts");
+    expect(migration).toContain("current_amount <= target_amount");
     expect(migration).toContain("grant execute");
   });
 });

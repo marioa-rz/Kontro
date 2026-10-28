@@ -99,7 +99,7 @@ create or replace function public.record_personal_debt_payment(
 returns numeric
 language plpgsql
 security definer
-set search_path = public
+set search_path = ''
 as $$
 declare
   v_principal numeric;
@@ -150,6 +150,11 @@ revoke all on function public.record_personal_debt_payment(uuid, uuid, numeric, 
 grant execute on function public.record_personal_debt_payment(uuid, uuid, numeric, date, text, text) to authenticated;
 
 revoke all on public.personal_debts, public.personal_debt_payments from anon;
-grant select, insert, update, delete on public.personal_debts to authenticated;
+grant select, insert, update on public.personal_debts to authenticated;
+revoke delete on public.personal_debts from authenticated;
 revoke insert, update, delete on public.personal_debt_payments from authenticated;
 grant select on public.personal_debt_payments to authenticated;
+
+alter table public.goals
+  add constraint goals_current_amount_not_above_target
+  check (current_amount <= target_amount);

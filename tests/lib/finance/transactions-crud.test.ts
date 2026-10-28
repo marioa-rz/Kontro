@@ -1000,15 +1000,21 @@ describe("updateGoal", () => {
   });
 
   it("updates a goal on success", async () => {
-    const supabase = setup([qb({ error: null })]);
+    const supabase = setup([
+      qb({ data: { current_amount: 100 }, error: null }),
+      qb({ error: null }),
+    ]);
     await expect(updateGoal(validInput)).resolves.toBeUndefined();
     expect(supabase.from).toHaveBeenCalledWith("goals");
   });
 
-  it("defaults current amount to 0 when omitted", async () => {
+  it("preserves stored progress when current amount is omitted", async () => {
     const inputWithoutCurrentAmount = { ...validInput };
     delete inputWithoutCurrentAmount.currentAmount;
-    const supabase = setup([qb({ error: null })]);
+    const supabase = setup([
+      qb({ data: { current_amount: 100 }, error: null }),
+      qb({ error: null }),
+    ]);
     await expect(
       updateGoal(inputWithoutCurrentAmount),
     ).resolves.toBeUndefined();
@@ -1016,9 +1022,19 @@ describe("updateGoal", () => {
   });
 
   it("throws when the update fails", async () => {
-    setup([qb({ error: { message: "update failed" } })]);
+    setup([
+      qb({ data: { current_amount: 100 }, error: null }),
+      qb({ error: { message: "update failed" } }),
+    ]);
     await expect(updateGoal(validInput)).rejects.toThrow(
       "Unable to update goal: update failed",
+    );
+  });
+
+  it("rejects a target below contribution-backed progress", async () => {
+    setup([qb({ data: { current_amount: 1200 }, error: null })]);
+    await expect(updateGoal(validInput)).rejects.toThrow(
+      "Target amount cannot be lower than saved progress.",
     );
   });
 });
