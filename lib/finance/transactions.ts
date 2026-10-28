@@ -549,6 +549,35 @@ const transactionSelectWithoutAdvancedMetadata = `
   )
 `;
 
+const transactionSelectBeforeDebtMetadata = `
+  id,
+  date,
+  description,
+  amount,
+  kind,
+  installment_group_id,
+  installment_number,
+  installment_total,
+  notes,
+  category_id,
+  payment_method_id,
+  categories (
+    id,
+    name,
+    icon,
+    group_type,
+    is_default,
+    monthly_limit
+  ),
+  payment_methods (
+    id,
+    name,
+    closing_day,
+    due_day,
+    type
+  )
+`;
+
 const categoryTranslationMap: Record<string, string> = {
   debt: "data.category.debts",
   debts: "data.category.debts",
@@ -3283,6 +3312,32 @@ async function fetchLegacyTransactionRows(
     params,
   );
   const { data, error } = await fallbackQuery;
+
+  if (error) {
+    if (error.code === "42703") {
+      return fetchPreDebtTransactionRows(supabase, userId, params);
+    }
+    throw new Error(`Unable to load transactions: ${error.message}`);
+  }
+
+  return (data ?? []) as unknown as TransactionRow[];
+}
+
+async function fetchPreDebtTransactionRows(
+  supabase: SupabaseClient,
+  userId: string,
+  params: FetchTransactionRowsParams,
+) {
+  const query = applyTransactionDateRange(
+    supabase
+      .from("transactions")
+      .select(transactionSelectBeforeDebtMetadata)
+      .eq("user_id", userId)
+      .order("date", { ascending: false })
+      .order("created_at", { ascending: false }),
+    params,
+  );
+  const { data, error } = await query;
 
   if (error) {
     throw new Error(`Unable to load transactions: ${error.message}`);

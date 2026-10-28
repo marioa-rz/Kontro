@@ -253,6 +253,21 @@ describe("listTransactions", () => {
     expect(result.map((t) => t.id)).toEqual(["fallback-row"]);
   });
 
+  it("falls back again when personal_debt_id is also missing", async () => {
+    setup([
+      qb({ data: null, error: { code: "42703", message: "advanced missing" } }),
+      qb({ data: null, error: { code: "42703", message: "debt missing" } }),
+      qb({ data: [row({ id: "pre-debt-migration" })], error: null }),
+    ]);
+
+    const result = await listTransactions({ month: "2026-07" });
+
+    expect(result.map((transaction) => transaction.id)).toEqual([
+      "pre-debt-migration",
+    ]);
+    expect(result[0].personalDebtId).toBeNull();
+  });
+
   it("defaults to an empty array when the fallback query succeeds with no data", async () => {
     setup([
       qb({ data: null, error: { code: "42703", message: "col missing" } }),
