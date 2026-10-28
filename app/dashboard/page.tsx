@@ -4,6 +4,7 @@ import { AppShell } from "@/components/dashboard/app-shell";
 import { FinancialFocus } from "@/components/dashboard/financial-focus";
 import { SummarySection } from "@/components/dashboard/summary-section";
 import { SetupWorkflow } from "@/components/dashboard/setup-workflow";
+import { PeriodSummary } from "@/components/dashboard/period-summary";
 import {
   DashboardLoadingRegion,
   FinancialSummaryRegion,
@@ -104,6 +105,7 @@ async function DashboardContent({
       </AnimatedCard>
 
       <FinancialFocus data={focusData} />
+      <PeriodSummary summaries={dashboardData.periodSummaries} />
       <DashboardDetails dashboardData={dashboardData} />
     </>
   );

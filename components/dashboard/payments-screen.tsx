@@ -7,6 +7,7 @@ import {
   type TransitionStartFunction,
 } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { CreditCard, Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -2194,6 +2195,17 @@ function PaymentsScreenView(props: PaymentsScreenProps & PaymentsScreenState) {
   );
 }
 
+function PersonalDebtsLink({ t }: { t: Translate }) {
+  return (
+    <Button asChild variant="outline">
+      <Link href="/debts">
+        <CreditCard className="size-4" />
+        {t("payments.personalDebts")}
+      </Link>
+    </Button>
+  );
+}
+
 type PaymentsTabsHeaderProps = {
   activeTab: string;
   setActiveTab: (tab: string) => void;
@@ -2317,6 +2329,7 @@ function PaymentsScreenMainSection(
       <PageHeader
         title={t("screen.payments.title")}
         description={t("screen.payments.description")}
+        actions={<PersonalDebtsLink t={t} />}
       />
 
       <PaymentsDueOverviewSection

@@ -6,6 +6,7 @@ import {
   ArrowLeftRight,
   BarChart3,
   CreditCard,
+  HandCoins,
   Folder,
   LayoutDashboard,
   MoreHorizontal,
@@ -32,6 +33,7 @@ const mobileNavItems = [
 ];
 
 const moreNavItems = [
+  { nameKey: "nav.debts", icon: HandCoins, href: "/debts" },
   { nameKey: "nav.categories", icon: Folder, href: "/categories" },
   { nameKey: "nav.goals", icon: Target, href: "/goals" },
   { nameKey: "nav.reports", icon: BarChart3, href: "/reports" },

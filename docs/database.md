@@ -12,6 +12,8 @@ The current committed schema defines these Supabase tables:
 - `transactions`
 - `monthly_budgets`
 - `goals`
+- `personal_debts`
+- `personal_debt_payments`
 - `privacy_requests`
 
 ## Current migrations
@@ -23,6 +25,7 @@ The current committed schema defines these Supabase tables:
 - `010_stop_writing_plaintext_profile_pii.sql`: stops the signup trigger from writing plaintext `profiles.name`/`email` (application-layer encryption now owns these fields, see `lib/crypto/field-encryption.ts`), and drops the now-unused `transactions_user_id_notes_idx` partial index.
 - `011_localize_guatemala_defaults.sql`: replaces the signup defaults for future users with Kontro's Guatemala-oriented categories and payment methods. It deliberately does not rename or overwrite existing user-owned data.
 - `012_goal_contributions_and_personal_debts.sql`: links savings transactions to goals and records each contribution atomically with the goal balance update.
+- `013_add_personal_debts.sql`: adds owner-scoped personal debts and payments plus an atomic, balance-capped payment RPC.
 
 ## What belongs in the repository
 
@@ -99,6 +102,7 @@ The application has backward-compatible fallbacks for older environments that do
 - `advanced_at`
 - `notes` — application-layer encrypted (`lib/crypto/field-encryption.ts`), random IV; never plaintext at rest.
 - `goal_id` — optional goal funded by a saving transaction.
+- `personal_debt_id` — optional personal debt paid by an expense transaction.
 - `payment_method_id`
 - `created_at`
 - `updated_at`

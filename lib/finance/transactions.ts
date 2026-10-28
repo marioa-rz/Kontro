@@ -63,6 +63,10 @@ export {
   type SubscriptionOverviewItem,
 } from "@/lib/finance/subscriptions";
 import { GROUP_COLORS } from "@/lib/finance/group-colors";
+import {
+  buildPeriodSummaries,
+  type PeriodSummaries,
+} from "@/lib/finance/period-summary";
 import { createClient } from "@/lib/supabase/server";
 
 export { buildExpensesByCategoryData };
@@ -117,6 +121,7 @@ type TransactionRow = {
   categories: CategoryRow | null;
   category_id: string | null;
   payment_method_id: string | null;
+  personal_debt_id?: string | null;
   payment_methods: PaymentMethodRow | null;
 };
 
@@ -331,6 +336,7 @@ export type DailyExpensesOverTimeItem = {
 };
 
 export type ReportMonthlyItem = {
+  debtPayments: number;
   excessExpenses: number;
   expenses: number;
   grossSavings: number;
@@ -349,6 +355,7 @@ export type ReportTransactionItem = {
   description: string;
   financialMonth: string;
   paymentMethod: string | null;
+  personalDebtId: string | null;
   type: TransactionType;
 };
 
@@ -405,6 +412,7 @@ export type DashboardData = TransactionFormOptions & {
   expensesOverTime: ExpensesOverTimeItem[];
   dailyExpensesOverTime: DailyExpensesOverTimeItem[];
   latestTransactions: Transaction[];
+  periodSummaries: PeriodSummaries;
   summaryData: SummaryData;
 };
 
@@ -493,6 +501,7 @@ const transactionSelect = `
   notes,
   category_id,
   payment_method_id,
+  personal_debt_id,
   categories (
     id,
     name,
@@ -522,6 +531,7 @@ const transactionSelectWithoutAdvancedMetadata = `
   notes,
   category_id,
   payment_method_id,
+  personal_debt_id,
   categories (
     id,
     name,
@@ -1068,6 +1078,7 @@ function toTransaction(row: TransactionRow): Transaction {
     paymentMethodClosingDay: resolveTransactionPaymentMethodClosingDay(row),
     paymentMethodDueDay: resolveTransactionPaymentMethodDueDay(row),
     paymentMethodKey,
+    personalDebtId: row.personal_debt_id ?? null,
     paymentMethodType: row.payment_methods?.type ?? null,
     type: row.kind,
   };
@@ -1145,14 +1156,21 @@ function getMonthlyFinanceSummary(transactions: Transaction[]) {
     .filter((transaction) => transaction.type === "income")
     .reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0);
   const expenses = transactions
-    .filter((transaction) => transaction.type === "expense")
+    .filter(
+      (transaction) =>
+        transaction.type === "expense" && !transaction.personalDebtId,
+    )
+    .reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0);
+  const debtPayments = transactions
+    .filter((transaction) => transaction.personalDebtId)
     .reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0);
   const grossSavings = transactions
     .filter((transaction) => transaction.type === "saving")
     .reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0);
-  const excessExpenses = Math.max(expenses - income, 0);
+  const excessExpenses = Math.max(expenses + debtPayments - income, 0);
 
   return {
+    debtPayments,
     excessExpenses,
     expenses,
     grossSavings,
@@ -3659,10 +3677,12 @@ function assembleDashboardData({
   monthBuckets,
   sourceData,
   budgetContext,
+  summaryEndDate,
 }: {
   monthBuckets: ReturnType<typeof getLastSixMonthKeys>;
   sourceData: Awaited<ReturnType<typeof fetchDashboardSourceData>>;
   budgetContext: ReturnType<typeof buildDashboardBudgetContext>;
+  summaryEndDate: string;
 }): DashboardData {
   const {
     transactions,
@@ -3675,8 +3695,7 @@ function assembleDashboardData({
     categories,
     paymentMethods,
   } = sourceData;
-  const { trendExpenseTransactions, scheduledExpenseTransactions, budgetData } =
-    budgetContext;
+  const { scheduledExpenseTransactions, budgetData } = budgetContext;
 
   return {
     budgetData,
@@ -3686,7 +3705,7 @@ function assembleDashboardData({
     expensesByCategory: buildExpensesByCategoryData(scheduledTransactions),
     expensesOverTime: buildExpensesOverTimeData(
       monthBuckets,
-      trendExpenseTransactions,
+      budgetContext.trendExpenseTransactions,
       scheduledExpenseTransactions,
     ),
     latestTransactions: mergeLatestTransactions(
@@ -3694,6 +3713,7 @@ function assembleDashboardData({
       displayScheduledTransactions,
       getTodayValue(),
     ),
+    periodSummaries: buildPeriodSummaries(transactions, summaryEndDate),
     paymentMethods,
     summaryData: buildDashboardSummaryData({
       transactions,
@@ -3724,7 +3744,25 @@ export async function getDashboardData(
     sourceData.trendTransactions,
   );
 
-  return assembleDashboardData({ monthBuckets, sourceData, budgetContext });
+  const summaryEndDate =
+    selectedMonth === getGuatemalaMonthValue()
+      ? getTodayValue()
+      : new Date(
+          Date.UTC(
+            Number(selectedMonth.slice(0, 4)),
+            Number(selectedMonth.slice(5, 7)),
+            0,
+          ),
+        )
+          .toISOString()
+          .slice(0, 10);
+
+  return assembleDashboardData({
+    monthBuckets,
+    sourceData,
+    budgetContext,
+    summaryEndDate,
+  });
 }
 
 function buildMonthlyReports({
@@ -3771,6 +3809,7 @@ function buildReportTransactions(
       description: transaction.descriptionKey,
       financialMonth,
       paymentMethod: transaction.paymentMethodKey ?? null,
+      personalDebtId: transaction.personalDebtId ?? null,
       type: transaction.type,
     }))
     .sort((left, right) => right.date.localeCompare(left.date));

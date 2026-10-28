@@ -10,6 +10,7 @@ import {
   Folder,
   PieChart,
   CreditCard,
+  HandCoins,
   BarChart3,
   Target,
   Settings,
@@ -27,6 +28,7 @@ const navigationItems = [
   { nameKey: "nav.categories", icon: Folder, href: "/categories" },
   { nameKey: "nav.budgets", icon: PieChart, href: "/budgets" },
   { nameKey: "nav.payments", icon: CreditCard, href: "/payments" },
+  { nameKey: "nav.debts", icon: HandCoins, href: "/debts" },
   { nameKey: "nav.reports", icon: BarChart3, href: "/reports" },
   { nameKey: "nav.goals", icon: Target, href: "/goals" },
   { nameKey: "nav.settings", icon: Settings, href: "/settings" },
@@ -270,7 +272,14 @@ function useActivePillRefs(pathname: string) {
     const ul = ulRef.current;
     const pill = pillRef.current;
     if (!ul || !pill) return;
-    syncPillPosition({ pathname, linkRefs: linkRefs.current, ul, pill, pillReady, setPillReady });
+    syncPillPosition({
+      pathname,
+      linkRefs: linkRefs.current,
+      ul,
+      pill,
+      pillReady,
+      setPillReady,
+    });
   }, [pathname, pillReady]);
 
   return { ulRef, pillRef, linkRefs };
