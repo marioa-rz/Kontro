@@ -1,5 +1,5 @@
 <h1 align="center">
-	<img width="72" src="public/dragg-icon.svg" alt="Kontro" />
+	<img width="72" src="public/kontro-icon.svg" alt="Kontro" />
 	<br />Kontro
 </h1>
 

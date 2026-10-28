@@ -10,13 +10,13 @@ export default function Loading() {
       <div className="relative grid size-24 place-items-center">
         <div className="dragg-loading-loader grid size-14 place-items-center rounded-full bg-primary">
           <Image
-            src="/dragg-icon.svg"
+            src="/kontro-icon.svg"
             alt=""
             width={32}
             height={32}
             priority
             loading="eager"
-            className="size-8 brightness-0"
+            className="size-8"
             aria-hidden="true"
           />
         </div>

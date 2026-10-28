@@ -95,7 +95,7 @@ function SidebarLogo() {
     <div className="flex items-center gap-3 px-6 py-6">
       <div className="flex items-center justify-center w-10 h-10 rounded-xl border border-border bg-card">
         <Image
-          src="/dragg-icon.svg"
+          src="/kontro-icon.svg"
           alt=""
           width={28}
           height={28}
