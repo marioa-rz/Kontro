@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { AppShell } from "@/components/dashboard/app-shell";
 import { FinancialFocus } from "@/components/dashboard/financial-focus";
 import { SummarySection } from "@/components/dashboard/summary-section";
+import { SetupWorkflow } from "@/components/dashboard/setup-workflow";
 import {
   DashboardLoadingRegion,
   FinancialSummaryRegion,
@@ -18,8 +19,10 @@ import {
   getPaymentsDueData,
   getUserContext,
   listCategoryOverview,
+  listGoals,
 } from "@/lib/finance/transactions";
 import { buildDashboardFocusData } from "@/lib/finance/dashboard-focus";
+import { buildSetupWorkflow } from "@/lib/finance/workflow";
 import { AnimatedCard } from "@/components/ui/animated-card";
 
 type DashboardPageProps = {
@@ -70,15 +73,24 @@ async function DashboardContent({
   selectedMonth?: string;
   userContext: Awaited<ReturnType<typeof getUserContext>>;
 }) {
-  const [dashboardData, categories, paymentsDue] = await Promise.all([
+  const [dashboardData, categories, goals, paymentsDue] = await Promise.all([
     getDashboardData(selectedMonth, userContext),
     listCategoryOverview(selectedMonth, userContext),
+    listGoals(),
     getPaymentsDueData(selectedMonth, userContext),
   ]);
   const focusData = buildDashboardFocusData(categories, paymentsDue.invoices);
+  const workflow = buildSetupWorkflow({
+    budgetCount: focusData.budgets.length,
+    categoryCount: dashboardData.categories.length,
+    goalCount: goals.length,
+    paymentMethodCount: dashboardData.paymentMethods.length,
+    transactionCount: dashboardData.latestTransactions.length,
+  });
 
   return (
     <>
+      <SetupWorkflow workflow={workflow} />
       <AnimatedCard index={0} className="mb-6 lg:mb-8">
         <FinancialSummaryRegion>
           <SummarySection

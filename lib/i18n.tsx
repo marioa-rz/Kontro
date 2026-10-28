@@ -702,6 +702,14 @@ const messages = {
     "user.fallback": "User",
     "user.initialsFallback": "DU",
     "user.logout": "Logout",
+    "workflow.description": "Complete the essentials to start using Kontro.",
+    "workflow.optional": "Optional",
+    "workflow.step.budget": "Set a budget",
+    "workflow.step.categories": "Review categories",
+    "workflow.step.goal": "Create a goal",
+    "workflow.step.paymentMethods": "Review payment methods",
+    "workflow.step.transaction": "Record your first movement",
+    "workflow.title": "Get Kontro ready",
   },
   "pt-BR": {
     "app.description":
@@ -1405,6 +1413,14 @@ const messages = {
     "user.fallback": "Usuário",
     "user.initialsFallback": "DU",
     "user.logout": "Sair",
+    "workflow.description": "Conclua o essencial para começar a usar o Kontro.",
+    "workflow.optional": "Opcional",
+    "workflow.step.budget": "Definir um orçamento",
+    "workflow.step.categories": "Revisar categorias",
+    "workflow.step.goal": "Criar uma meta",
+    "workflow.step.paymentMethods": "Revisar formas de pagamento",
+    "workflow.step.transaction": "Registrar o primeiro movimento",
+    "workflow.title": "Prepare o Kontro",
   },
 } as const;
 
@@ -1592,6 +1608,14 @@ const spanishMessages = {
   "user.fallback": "Usuario",
   "user.initialsFallback": "KO",
   "user.logout": "Cerrar sesión",
+  "workflow.description": "Completa lo esencial para comenzar a usar Kontro.",
+  "workflow.optional": "Opcional",
+  "workflow.step.budget": "Definir un presupuesto",
+  "workflow.step.categories": "Revisar categorías",
+  "workflow.step.goal": "Crear una meta",
+  "workflow.step.paymentMethods": "Revisar métodos de pago",
+  "workflow.step.transaction": "Registrar el primer movimiento",
+  "workflow.title": "Prepara Kontro",
 } as const;
 
 const remainingSpanishMessages = {
