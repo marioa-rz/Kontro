@@ -2555,18 +2555,25 @@ export async function addGoalFunds(goalId: string, amount: number) {
   assertPositiveFiniteAmount(amount, "Amount");
   const { supabase, userId } = await getUserContext();
 
-  const { data, error } = await supabase.rpc("add_goal_funds", {
-    p_goal_id: goalId,
-    p_user_id: userId,
+  const { data, error } = await supabase.rpc("record_goal_contribution", {
     p_amount: amount,
+    p_date: getTodayValue(),
+    p_description: encryptDescription("transaction.goalContribution"),
+    p_goal_id: goalId,
+    p_notes: encryptField(`goal:${goalId}`),
+    p_user_id: userId,
   });
 
   if (error) {
     throw new Error(`Unable to add goal funds: ${error.message}`);
   }
 
-  if (!data) {
+  if (data === null) {
     throw new Error("Goal not found.");
+  }
+
+  if (Number(data) <= 0) {
+    throw new Error("Goal is already complete.");
   }
 }
 

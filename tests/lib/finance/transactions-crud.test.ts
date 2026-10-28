@@ -1078,11 +1078,14 @@ describe("addGoalFunds", () => {
 
   it("adds funds on success", async () => {
     const supabase = setup([]);
-    supabase.rpc.mockResolvedValue({ data: true, error: null });
+    supabase.rpc.mockResolvedValue({ data: 10, error: null });
     await expect(addGoalFunds(GOAL_ID, 10)).resolves.toBeUndefined();
-    expect(supabase.rpc).toHaveBeenCalledWith("add_goal_funds", {
+    expect(supabase.rpc).toHaveBeenCalledWith("record_goal_contribution", {
       p_amount: 10,
+      p_date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      p_description: expect.any(String),
       p_goal_id: GOAL_ID,
+      p_notes: expect.any(String),
       p_user_id: USER_ID,
     });
   });

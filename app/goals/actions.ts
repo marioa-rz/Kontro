@@ -22,9 +22,15 @@ const uuidSchema = z
 
 const goalSchema = z
   .object({
-    color: z.string().trim().regex(/^#[0-9a-f]{6}$/i),
+    color: z
+      .string()
+      .trim()
+      .regex(/^#[0-9a-f]{6}$/i),
     currentAmount: z.number().finite().min(0).max(1_000_000_000).optional(),
-    deadline: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/),
+    deadline: z
+      .string()
+      .trim()
+      .regex(/^\d{4}-\d{2}-\d{2}$/),
     icon: z.string().trim().min(1).max(32),
     name: z.string().trim().min(1).max(160),
     targetAmount: z.number().finite().positive().max(1_000_000_000),
@@ -49,10 +55,17 @@ export async function updateGoalAction(data: UpdateGoalInput) {
 
 export async function addGoalFundsAction(goalId: string, amount: number) {
   const parsedGoalId = uuidSchema.parse(goalId);
-  const parsedAmount = z.number().finite().positive().max(1_000_000_000).parse(amount);
+  const parsedAmount = z
+    .number()
+    .finite()
+    .positive()
+    .max(1_000_000_000)
+    .parse(amount);
   await addGoalFunds(parsedGoalId, parsedAmount);
   revalidatePath("/dashboard");
   revalidatePath("/goals");
+  revalidatePath("/transactions");
+  revalidatePath("/reports");
 }
 
 export async function deleteGoalAction(goalId: string) {
