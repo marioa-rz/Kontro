@@ -18,11 +18,11 @@ Kontro is a Next.js App Router application backed by Supabase Auth and Supabase 
 - `/`: Google OAuth and email/password login screen. Authenticated users are redirected to `/dashboard`.
 - `/auth/callback`: Supabase OAuth and email recovery code exchange with guarded same-origin redirect handling.
 - `/auth/update-password`: password update screen for authenticated recovery sessions.
-- `/dashboard`: summary cards, transaction form, category-budget balances, credit-card payoff progress, income by source, latest transactions, and quick actions.
+- `/dashboard`: summary cards, transaction form, category-budget balances, credit-card payoff progress, latest transactions, and quick actions.
 - `/transactions`: transaction list with update/delete flows.
 - `/transactions/new`: focused new transaction flow.
-- `/categories`: category management with icons, groups, and monthly limits.
-- `/budgets`: amount-first budget totals, group progress, and category budget progress.
+- `/categories`: movement-category management organized by expense, income, and saving.
+- `/budgets`: amount-first budget totals and one category budget list, including categories that still need a monthly limit.
 - `/payments`: payment methods, credit limits, due payments, and subscription management.
 - `/goals`: goals with target/current amounts, funding, deadlines, colors, and icons.
 - `/reports`: monthly reports, net worth progression, and transaction exports.
@@ -38,9 +38,9 @@ Kontro is a Next.js App Router application backed by Supabase Auth and Supabase 
 - Monthly subscriptions are represented by future transaction rows whose `notes` start with `subscription`. There is no explicit paid/unpaid column, so scoped subscription deletion removes the selected occurrence and matching future rows while preserving earlier history.
 - Paused subscription rows use `subscription paused` notes and are hidden from transaction/payment views while remaining available to subscription overview logic.
 - Categories belong to one authenticated user and are grouped by Needs, Wants, Savings, or Income.
-- Categories can include emoji icons and monthly limits.
+- Categories can include emoji icons. Monthly limits are configured from the budget workflow so category organization and budget planning remain distinct.
 - The dashboard prioritizes actual currency amounts. Budget and debt calculations live in `lib/finance/`, while React components only render prepared progress data.
-- Payment methods belong to one authenticated user. Cash-type methods are protected defaults; the legacy Pix type remains supported for migrated data.
+- Payment methods belong to one authenticated user. Every user-owned method can be edited or deleted, including seeded cash methods and the legacy Pix type.
 - Credit cards support `credit_limit`, `due_day`, and `closing_day`. Invoice rows are calculated in `lib/finance/credit-card-invoices.ts` for display and planning.
 - Payment method usage is calculated in `lib/finance/payment-method-overview.ts`.
 - Goals are stored separately from transactions and support create, edit, fund, and delete operations.

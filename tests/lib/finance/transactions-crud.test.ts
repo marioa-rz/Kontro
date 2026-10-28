@@ -758,7 +758,7 @@ describe("updatePaymentMethod", () => {
   it("throws for an invalid type", async () => {
     setup([]);
     await expect(
-      updatePaymentMethod({ ...validInput, type: "cash" as never }),
+      updatePaymentMethod({ ...validInput, type: "crypto" as never }),
     ).rejects.toThrow("Payment method type is invalid.");
   });
 
@@ -783,11 +783,15 @@ describe("updatePaymentMethod", () => {
     );
   });
 
-  it("throws for a protected payment method", async () => {
-    setup([qb({ data: paymentMethodRow({ type: "pix" }), error: null })]);
-    await expect(updatePaymentMethod(validInput)).rejects.toThrow(
-      "This payment method cannot be edited.",
-    );
+  it("updates a default cash payment method", async () => {
+    const supabase = setup([
+      qb({ data: paymentMethodRow({ type: "cash" }), error: null }),
+      qb({ error: null }),
+    ]);
+    await expect(
+      updatePaymentMethod({ ...validInput, type: "cash" }),
+    ).resolves.toBeUndefined();
+    expect(supabase.from).toHaveBeenCalledWith("payment_methods");
   });
 
   it("defaults credit limit/due day/closing day when omitted from a credit update", async () => {
@@ -843,11 +847,15 @@ describe("deletePaymentMethod", () => {
     );
   });
 
-  it("throws for a protected payment method", async () => {
-    setup([qb({ data: paymentMethodRow({ type: "cash" }), error: null })]);
-    await expect(deletePaymentMethod(PAYMENT_METHOD_ID)).rejects.toThrow(
-      "This payment method cannot be deleted.",
-    );
+  it("deletes a default cash payment method", async () => {
+    const supabase = setup([
+      qb({ data: paymentMethodRow({ type: "cash" }), error: null }),
+      qb({ error: null }),
+    ]);
+    await expect(
+      deletePaymentMethod(PAYMENT_METHOD_ID),
+    ).resolves.toBeUndefined();
+    expect(supabase.from).toHaveBeenCalledWith("payment_methods");
   });
 
   it("deletes a non-protected payment method", async () => {
@@ -896,20 +904,6 @@ describe("createGoal", () => {
     ).rejects.toThrow("Target amount must be greater than zero.");
   });
 
-  it("throws for a non-finite current amount", async () => {
-    setup([]);
-    await expect(
-      createGoal({ ...validInput, currentAmount: NaN }),
-    ).rejects.toThrow("Current amount is invalid.");
-  });
-
-  it("throws for a negative current amount", async () => {
-    setup([]);
-    await expect(
-      createGoal({ ...validInput, currentAmount: -1 }),
-    ).rejects.toThrow("Current amount is invalid.");
-  });
-
   it("throws for an invalid deadline", async () => {
     setup([]);
     await expect(
@@ -953,7 +947,7 @@ describe("createGoal", () => {
     expect(supabase.from).toHaveBeenCalledWith("goals");
   });
 
-  it("creates a goal, clamping current amount to the target", async () => {
+  it("creates a goal at zero so progress starts through contributions", async () => {
     const supabase = setup([qb({ error: null })], {
       createdAt: "2026-01-01T00:00:00.000Z",
     });
@@ -989,13 +983,6 @@ describe("updateGoal", () => {
     );
   });
 
-  it("throws for a negative current amount", async () => {
-    setup([]);
-    await expect(
-      updateGoal({ ...validInput, currentAmount: -1 }),
-    ).rejects.toThrow("Current amount is invalid.");
-  });
-
   it("throws when the deadline is before the user's creation month", async () => {
     setup([], { createdAt: "2026-06-01T00:00:00.000Z" });
     await expect(
@@ -1013,15 +1000,21 @@ describe("updateGoal", () => {
   });
 
   it("updates a goal on success", async () => {
-    const supabase = setup([qb({ error: null })]);
+    const supabase = setup([
+      qb({ data: { current_amount: 100 }, error: null }),
+      qb({ error: null }),
+    ]);
     await expect(updateGoal(validInput)).resolves.toBeUndefined();
     expect(supabase.from).toHaveBeenCalledWith("goals");
   });
 
-  it("defaults current amount to 0 when omitted", async () => {
+  it("preserves stored progress when current amount is omitted", async () => {
     const inputWithoutCurrentAmount = { ...validInput };
     delete inputWithoutCurrentAmount.currentAmount;
-    const supabase = setup([qb({ error: null })]);
+    const supabase = setup([
+      qb({ data: { current_amount: 100 }, error: null }),
+      qb({ error: null }),
+    ]);
     await expect(
       updateGoal(inputWithoutCurrentAmount),
     ).resolves.toBeUndefined();
@@ -1029,9 +1022,28 @@ describe("updateGoal", () => {
   });
 
   it("throws when the update fails", async () => {
-    setup([qb({ error: { message: "update failed" } })]);
+    setup([
+      qb({ data: { current_amount: 100 }, error: null }),
+      qb({ error: { message: "update failed" } }),
+    ]);
     await expect(updateGoal(validInput)).rejects.toThrow(
       "Unable to update goal: update failed",
+    );
+  });
+
+  it("reports goal lookup failures and missing goals", async () => {
+    setup([qb({ data: null, error: { message: "lookup failed" } })]);
+    await expect(updateGoal(validInput)).rejects.toThrow(
+      "Unable to load goal: lookup failed",
+    );
+    setup([qb({ data: null, error: null })]);
+    await expect(updateGoal(validInput)).rejects.toThrow("Goal not found.");
+  });
+
+  it("rejects a target below contribution-backed progress", async () => {
+    setup([qb({ data: { current_amount: 1200 }, error: null })]);
+    await expect(updateGoal(validInput)).rejects.toThrow(
+      "Target amount cannot be lower than saved progress.",
     );
   });
 });
@@ -1068,13 +1080,24 @@ describe("addGoalFunds", () => {
     await expect(addGoalFunds(GOAL_ID, 10)).rejects.toThrow("Goal not found.");
   });
 
+  it("throws when the goal is already complete", async () => {
+    const supabase = setup([]);
+    supabase.rpc.mockResolvedValue({ data: 0, error: null });
+    await expect(addGoalFunds(GOAL_ID, 10)).rejects.toThrow(
+      "Goal is already complete.",
+    );
+  });
+
   it("adds funds on success", async () => {
     const supabase = setup([]);
-    supabase.rpc.mockResolvedValue({ data: true, error: null });
+    supabase.rpc.mockResolvedValue({ data: 10, error: null });
     await expect(addGoalFunds(GOAL_ID, 10)).resolves.toBeUndefined();
-    expect(supabase.rpc).toHaveBeenCalledWith("add_goal_funds", {
+    expect(supabase.rpc).toHaveBeenCalledWith("record_goal_contribution", {
       p_amount: 10,
+      p_date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      p_description: expect.any(String),
       p_goal_id: GOAL_ID,
+      p_notes: expect.any(String),
       p_user_id: USER_ID,
     });
   });

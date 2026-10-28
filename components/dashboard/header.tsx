@@ -246,7 +246,7 @@ function KontroLogo() {
     <div className="flex items-center gap-2">
       <div className="flex items-center justify-center w-9 h-9 rounded-xl border border-border bg-card">
         <Image
-          src="/dragg-icon.svg"
+          src="/kontro-icon.svg"
           alt=""
           width={24}
           height={24}

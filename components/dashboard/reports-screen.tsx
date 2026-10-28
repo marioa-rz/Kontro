@@ -68,6 +68,7 @@ function escapeHtml(value: string) {
 
 function getFallbackMonth(reportsData: ReportsData) {
   return {
+    debtPayments: 0,
     excessExpenses: 0,
     expenses: 0,
     grossSavings: 0,
@@ -104,6 +105,7 @@ function useReportsScreenData(
     () =>
       monthlyReports
         .map((report) => ({
+          debtPayments: report.debtPayments,
           expenses: report.expenses,
           income: report.income,
           month: t(report.monthKey),
@@ -153,7 +155,9 @@ function buildTransactionsCsvRows(
     ...reportsData.transactions.map((transaction) => [
       transaction.date,
       transaction.financialMonth,
-      t(`common.${transaction.type}`),
+      transaction.personalDebtId
+        ? t("screen.reports.debtPayments")
+        : t(`common.${transaction.type}`),
       t(transaction.description),
       t(transaction.category),
       transaction.paymentMethod ? t(transaction.paymentMethod) : "",
@@ -179,6 +183,49 @@ function downloadTransactionsCsv(
   URL.revokeObjectURL(url);
 }
 
+type PdfReportFormatters = {
+  formatCurrency: (value: number) => string;
+  formatDate: (value: string) => string;
+  t: (key: string) => string;
+};
+
+function buildExpenseLines(
+  reportsData: ReportsData,
+  { formatCurrency, formatDate, t }: PdfReportFormatters,
+) {
+  return reportsData.transactions
+    .filter(
+      (transaction) =>
+        transaction.type === "expense" && !transaction.personalDebtId,
+    )
+    .map((transaction) =>
+      [
+        formatDate(transaction.date),
+        transaction.financialMonth,
+        t(transaction.description),
+        t(transaction.category),
+        transaction.paymentMethod ? t(transaction.paymentMethod) : "-",
+        formatCurrency(transaction.amount),
+      ].join(" | "),
+    );
+}
+
+function buildDebtLines(
+  reportsData: ReportsData,
+  { formatCurrency, formatDate, t }: PdfReportFormatters,
+) {
+  return reportsData.transactions
+    .filter((transaction) => transaction.personalDebtId)
+    .map((transaction) =>
+      [
+        formatDate(transaction.date),
+        transaction.financialMonth,
+        t(transaction.description),
+        formatCurrency(transaction.amount),
+      ].join(" | "),
+    );
+}
+
 function buildPdfReportText({
   reportsData,
   monthlyReports,
@@ -192,23 +239,15 @@ function buildPdfReportText({
   formatDate: (value: string) => string;
   t: (key: string) => string;
 }) {
-  const expenseLines = reportsData.transactions
-    .filter((transaction) => transaction.type === "expense")
-    .map((transaction) =>
-      [
-        formatDate(transaction.date),
-        transaction.financialMonth,
-        t(transaction.description),
-        t(transaction.category),
-        transaction.paymentMethod ? t(transaction.paymentMethod) : "-",
-        formatCurrency(transaction.amount),
-      ].join(" | "),
-    );
+  const formatters = { formatCurrency, formatDate, t };
+  const expenseLines = buildExpenseLines(reportsData, formatters);
+  const debtLines = buildDebtLines(reportsData, formatters);
   const summaryLines = monthlyReports.map((report) =>
     [
       `${t(report.monthKey)} ${report.year}`,
       `${t("common.income")}: ${formatCurrency(report.income)}`,
       `${t("common.expense")}: ${formatCurrency(report.expenses)}`,
+      `${t("screen.reports.debtPayments")}: ${formatCurrency(report.debtPayments)}`,
       `${t("common.saving")}: ${formatCurrency(report.savings)}`,
       `${t("screen.reports.netWorth")}: ${formatCurrency(report.netWorth)}`,
     ].join(" | "),
@@ -222,6 +261,9 @@ function buildPdfReportText({
     "",
     t("screen.reports.allExpenses"),
     ...(expenseLines.length ? expenseLines : [t("screen.reports.noExpenses")]),
+    "",
+    t("screen.reports.debtPayments"),
+    ...(debtLines.length ? debtLines : [t("screen.reports.noDebtPayments")]),
   ].join("\n");
 }
 
@@ -550,6 +592,16 @@ function IncomeVsExpensesChartCard({
                 animationDuration={500}
                 animationEasing="ease-out"
               />
+              <Bar
+                dataKey="debtPayments"
+                name={t("screen.reports.debtPayments")}
+                fill="var(--destructive)"
+                radius={[4, 4, 0, 0]}
+                isAnimationActive
+                animationBegin={150}
+                animationDuration={500}
+                animationEasing="ease-out"
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -656,6 +708,9 @@ function MonthlyBreakdownRow({
       <td className="p-4 text-right text-expense">
         {formatCurrency(report.expenses)}
       </td>
+      <td className="p-4 text-right text-destructive">
+        {formatCurrency(report.debtPayments)}
+      </td>
       <td className="p-4 text-right text-savings">
         {formatCurrency(report.savings)}
       </td>
@@ -682,6 +737,7 @@ function MonthlyBreakdownTable({
     t("screen.reports.month"),
     t("common.income"),
     t("common.expense"),
+    t("screen.reports.debtPayments"),
     t("common.saving"),
     t("screen.reports.excessExpenses"),
     t("screen.reports.netWorth"),

@@ -24,6 +24,10 @@ import { PlaceholderPage } from "@/components/dashboard/placeholder-page";
 import { SummaryCards } from "@/components/dashboard/summary-cards";
 import { AnimatedCard } from "@/components/ui/animated-card";
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn() }),
+}));
+
 const translations: Record<string, string> = {
   "common.expense": "Expense",
   "common.income": "Income",
@@ -126,7 +130,7 @@ describe("dashboard component rendering", () => {
     expect(html).not.toContain("-25.0%");
   });
 
-  it("renders budget progress without the 50/30/20 pie chart", () => {
+  it("renders one category budget list without group duplication", () => {
     const html = renderWithI18n(
       <BudgetsScreen
         budgetData={{
@@ -149,14 +153,27 @@ describe("dashboard component rendering", () => {
             spent: 750,
           },
         }}
-        budgetSplitData={[]}
-        categories={[]}
+        categories={[
+          {
+            canModify: true,
+            color: "#f00",
+            group: "needs",
+            icon: "🏠",
+            id: "default-health",
+            isDefault: true,
+            label: "data.category.health",
+            monthlyLimit: 0,
+            name: "Health",
+            spent: 0,
+          },
+        ]}
       />,
     );
 
-    expect(html).toContain("Needs");
-    expect(html).toContain("Wants");
-    expect(html).toContain("Savings");
+    expect(html).toContain("Health");
+    expect(html).toContain("category.noMonthlyLimit");
+    expect(html).not.toContain("Needs");
+    expect(html).not.toContain("Wants");
     expect(html).not.toContain("% used");
     expect(html).not.toContain("50/30/20 rule");
   });
@@ -472,9 +489,7 @@ describe("dashboard component rendering", () => {
     expect(html).toContain("custom");
   });
 
-  it("renders budget groups with normal trend (50–80% usage)", () => {
-    // needs=60% (normal), wants=58% (normal), savings=50% (under)
-    // plannedSpent === spent → null sub-note branch
+  it("keeps default categories visible when they have no monthly limit", () => {
     const html = renderWithI18n(
       <BudgetsScreen
         budgetData={{
@@ -492,14 +507,25 @@ describe("dashboard component rendering", () => {
           },
           wants: { budget: 600, percentage: 58, plannedSpent: 350, spent: 350 },
         }}
-        budgetSplitData={[]}
-        categories={[]}
+        categories={[
+          {
+            canModify: true,
+            color: "#f00",
+            group: "wants",
+            icon: "🛍️",
+            id: "default-shopping",
+            isDefault: true,
+            label: "data.category.shopping",
+            monthlyLimit: 0,
+            name: "Shopping",
+            spent: 0,
+          },
+        ]}
       />,
     );
 
-    expect(html).toContain("Needs");
-    expect(html).toContain("Wants");
-    expect(html).toContain("Savings");
+    expect(html).toContain("Shopping");
+    expect(html).toContain("category.noMonthlyLimit");
   });
 
   it("renders budget screen with total spending over budget", () => {
@@ -526,7 +552,6 @@ describe("dashboard component rendering", () => {
             spent: 660,
           },
         }}
-        budgetSplitData={[]}
         categories={[
           {
             color: "#f00",
@@ -569,40 +594,10 @@ describe("dashboard component rendering", () => {
           },
           wants: { budget: 600, percentage: 50, plannedSpent: 300, spent: 300 },
         }}
-        budgetSplitData={[
-          {
-            amount: 500,
-            color: "#22C55E",
-            maxAmount: 1000,
-            nameKey: "data.group.needs",
-            plannedSpentAmount: 500,
-            spentAmount: 500,
-            value: 50,
-          },
-          {
-            amount: 200,
-            color: "#FFC38A",
-            maxAmount: 400,
-            nameKey: "data.group.wants",
-            plannedSpentAmount: 200,
-            spentAmount: 200,
-            value: 30,
-          },
-          {
-            amount: 150,
-            color: "#2563EB",
-            maxAmount: 400,
-            nameKey: "data.group.savings",
-            plannedSpentAmount: 150,
-            spentAmount: 150,
-            value: 20,
-          },
-        ]}
         categories={[]}
       />,
     );
 
-    expect(html).toContain("Needs");
-    expect(html).toContain("Savings");
+    expect(html).toContain("screen.budgets.categoryBudgets");
   });
 });

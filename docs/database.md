@@ -12,6 +12,8 @@ The current committed schema defines these Supabase tables:
 - `transactions`
 - `monthly_budgets`
 - `goals`
+- `personal_debts`
+- `personal_debt_payments`
 - `privacy_requests`
 
 ## Current migrations
@@ -22,6 +24,8 @@ The current committed schema defines these Supabase tables:
 - `006_add_installment_prepayment_metadata.sql`: adds installment prepayment metadata and an authenticated-user scoped prepayment month index.
 - `010_stop_writing_plaintext_profile_pii.sql`: stops the signup trigger from writing plaintext `profiles.name`/`email` (application-layer encryption now owns these fields, see `lib/crypto/field-encryption.ts`), and drops the now-unused `transactions_user_id_notes_idx` partial index.
 - `011_localize_guatemala_defaults.sql`: replaces the signup defaults for future users with Kontro's Guatemala-oriented categories and payment methods. It deliberately does not rename or overwrite existing user-owned data.
+- `012_goal_contributions_and_personal_debts.sql`: links savings transactions to goals and records each contribution atomically with the goal balance update.
+- `013_add_personal_debts.sql`: adds owner-scoped personal debts and payments plus an atomic, balance-capped payment RPC.
 
 ## What belongs in the repository
 
@@ -97,6 +101,8 @@ The application has backward-compatible fallbacks for older environments that do
 - `advanced_to_month`
 - `advanced_at`
 - `notes` — application-layer encrypted (`lib/crypto/field-encryption.ts`), random IV; never plaintext at rest.
+- `goal_id` — optional goal funded by a saving transaction.
+- `personal_debt_id` — optional personal debt paid by an expense transaction.
 - `payment_method_id`
 - `created_at`
 - `updated_at`
@@ -137,7 +143,10 @@ The current UI calculates 50/30/20 budget data from transactions and category li
 - `updated_at`
 - `deleted_at`
 
-`lib/finance/transactions.ts` calls the `add_goal_funds` RPC when adding funds to an existing goal. If an environment does not already provide this RPC, add a migration before using the goal funding flow.
+`lib/finance/transactions.ts` calls `record_goal_contribution` when adding funds. The RPC locks the goal, caps the amount to the remaining target, inserts the linked saving transaction, and updates the goal atomically.
+Goals are created with zero progress, and editing goal metadata never changes progress. All progress changes therefore go through the contribution RPC and remain linked to the savings ledger.
+
+Personal debt repayments are written only through `record_personal_debt_payment`. Authenticated clients have read-only access to repayment rows; the security-definer RPC caps the amount and creates the linked expense transaction in the same database operation. The transaction owner trigger validates category, payment method, goal, and personal-debt references against `transactions.user_id`.
 
 ## Privacy request fields in the schema
 

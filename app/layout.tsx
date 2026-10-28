@@ -73,11 +73,11 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "/dragg-icon.svg",
+        url: "/kontro-icon.svg",
         type: "image/svg+xml",
       },
     ],
-    apple: "/dragg-icon-app.png",
+    apple: "/kontro-icon-apple.png",
   },
 };
 

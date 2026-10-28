@@ -22,7 +22,7 @@ vi.mock("@/lib/i18n", () => ({
 }));
 
 describe("FinancialFocus", () => {
-  it("renders real amounts for budgets, debts, and income without percentages", () => {
+  it("renders only budget and debt amounts without percentages", () => {
     const html = renderToStaticMarkup(
       <FinancialFocus
         data={{
@@ -67,12 +67,14 @@ describe("FinancialFocus", () => {
 
     expect(html).toContain("Budget progress");
     expect(html).toContain("Debt progress");
-    expect(html).toContain("Income sources");
+    expect(html).not.toContain("Income sources");
     expect(html).toContain("Q650");
     expect(html).toContain("Q600");
-    expect(html).toContain("Q1800");
+    expect(html).not.toContain("Q1800");
     expect(html).toContain("Over budget");
     expect(html).toContain("Q50");
     expect(html).not.toContain("% used");
+    expect(html).toContain("grid-cols-[auto_1fr]");
+    expect(html).not.toContain("flex-row items-center gap-3");
   });
 });

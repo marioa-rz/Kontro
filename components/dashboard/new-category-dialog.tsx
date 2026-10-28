@@ -43,12 +43,26 @@ type NewCategoryDialogProps = {
   readonly onCreated?: () => void;
   readonly open?: boolean;
   readonly onOpenChange?: (open: boolean) => void;
+  readonly purpose?: "category" | "budget";
   readonly updateCategoryAction?: (data: UpdateCategoryInput) => Promise<void>;
 };
 
 type CategoryGroup = CreateCategoryInput["group"];
 
-const groupOptions: CategoryGroup[] = ["needs", "wants", "savings", "income"];
+const movementTypeOptions = ["expense", "income", "saving"] as const;
+type MovementType = (typeof movementTypeOptions)[number];
+
+function movementTypeForGroup(group: CategoryGroup): MovementType {
+  if (group === "income") return "income";
+  if (group === "savings") return "saving";
+  return "expense";
+}
+
+function groupForMovementType(type: MovementType): CategoryGroup {
+  if (type === "income") return "income";
+  if (type === "saving") return "savings";
+  return "needs";
+}
 const emojiOptions = [
   { emoji: "🏠", label: "Moradia" },
   { emoji: "🛒", label: "Mercado" },
@@ -175,52 +189,70 @@ function CategoryIconPicker({ icon, setIcon }: CategoryIconPickerProps) {
 type CategoryGroupAndLimitFieldsProps = {
   readonly group: CategoryGroup;
   readonly isGroupLocked: boolean;
-  readonly monthlyLimit: number;
   readonly setGroup: (group: CategoryGroup) => void;
-  readonly setMonthlyLimit: (monthlyLimit: number) => void;
 };
+
+function ExpenseGroupButtons({
+  group,
+  setGroup,
+}: Pick<CategoryGroupAndLimitFieldsProps, "group" | "setGroup">) {
+  const { t } = useI18n();
+  return (
+    <div className="space-y-2">
+      <Label>{t("category.expenseType")}</Label>
+      <div className="grid grid-cols-2 gap-2">
+        {(["needs", "wants"] as const).map((expenseGroup) => (
+          <Button
+            key={expenseGroup}
+            type="button"
+            variant={group === expenseGroup ? "default" : "outline"}
+            aria-pressed={group === expenseGroup}
+            onClick={() => setGroup(expenseGroup)}
+          >
+            {t(
+              expenseGroup === "needs"
+                ? "category.expenseTypeEssential"
+                : "category.expenseTypePersonal",
+            )}
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function CategoryGroupAndLimitFields({
   group,
   isGroupLocked,
-  monthlyLimit,
   setGroup,
-  setMonthlyLimit,
 }: CategoryGroupAndLimitFieldsProps) {
   const { t } = useI18n();
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div className="space-y-2">
       <div className="space-y-2">
         <Label>{t("category.group")}</Label>
         <Select
           disabled={isGroupLocked}
-          value={group}
-          onValueChange={(value) => setGroup(value as CategoryGroup)}
+          value={movementTypeForGroup(group)}
+          onValueChange={(value) =>
+            setGroup(groupForMovementType(value as MovementType))
+          }
         >
           <SelectTrigger className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {groupOptions.map((option) => (
+            {movementTypeOptions.map((option) => (
               <SelectItem key={option} value={option}>
-                {t(`data.group.${option}`)}
+                {t(`common.${option}`)}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
-
-      {group !== "income" ? (
-        <div className="space-y-2">
-          <CurrencyInput
-            id="category-limit"
-            label={t("category.monthlyLimit")}
-            value={monthlyLimit}
-            onValueChange={setMonthlyLimit}
-            labelClassName="normal-case tracking-normal text-foreground"
-          />
-        </div>
+      {!isGroupLocked && movementTypeForGroup(group) === "expense" ? (
+        <ExpenseGroupButtons group={group} setGroup={setGroup} />
       ) : null}
     </div>
   );
@@ -228,10 +260,25 @@ function CategoryGroupAndLimitFields({
 
 type CategoryDialogHeaderProps = {
   readonly isEditing: boolean;
+  readonly purpose: "category" | "budget";
   readonly t: ReturnType<typeof useI18n>["t"];
 };
 
-function CategoryDialogHeader({ isEditing, t }: CategoryDialogHeaderProps) {
+function CategoryDialogHeader({
+  isEditing,
+  purpose,
+  t,
+}: CategoryDialogHeaderProps) {
+  if (purpose === "budget") {
+    return (
+      <DialogHeader>
+        <DialogTitle>{t("screen.budgets.configureBudget")}</DialogTitle>
+        <DialogDescription>
+          {t("screen.budgets.configureDescription")}
+        </DialogDescription>
+      </DialogHeader>
+    );
+  }
   return (
     <DialogHeader>
       <DialogTitle>
@@ -252,17 +299,21 @@ type CategoryDialogFooterProps = {
   readonly isEditing: boolean;
   readonly isSaving: boolean;
   readonly setOpen: (open: boolean) => void;
+  readonly purpose: "category" | "budget";
 };
 
 function CategoryDialogFooter({
   isEditing,
   isSaving,
   setOpen,
+  purpose,
 }: CategoryDialogFooterProps) {
   const { t } = useI18n();
   let submitLabel = t("category.create");
   if (isSaving) {
     submitLabel = t("category.saving");
+  } else if (purpose === "budget") {
+    submitLabel = t("screen.budgets.saveBudget");
   } else if (isEditing) {
     submitLabel = t("category.update");
   }
@@ -455,8 +506,50 @@ function useCategoryDialogController({
   return { open, setOpen, isSaving, isEditing, ...fields, handleSubmit, t };
 }
 
+type CategoryDialogFieldsProps = Pick<
+  ReturnType<typeof useCategoryDialogController>,
+  | "group"
+  | "icon"
+  | "isEditing"
+  | "monthlyLimit"
+  | "name"
+  | "setGroup"
+  | "setIcon"
+  | "setMonthlyLimit"
+  | "setName"
+  | "t"
+> & {
+  readonly purpose: "category" | "budget";
+};
+
+function CategoryDialogFields(props: CategoryDialogFieldsProps) {
+  if (props.purpose === "budget") {
+    return (
+      <CurrencyInput
+        id="category-limit"
+        label={props.t("category.monthlyLimit")}
+        value={props.monthlyLimit}
+        onValueChange={props.setMonthlyLimit}
+        labelClassName="normal-case tracking-normal text-foreground"
+      />
+    );
+  }
+
+  return (
+    <>
+      <CategoryNameField name={props.name} setName={props.setName} />
+      <CategoryIconPicker icon={props.icon} setIcon={props.setIcon} />
+      <CategoryGroupAndLimitFields
+        group={props.group}
+        isGroupLocked={props.isEditing}
+        setGroup={props.setGroup}
+      />
+    </>
+  );
+}
+
 export function NewCategoryDialog(props: NewCategoryDialogProps) {
-  const { children } = props;
+  const { children, purpose = "category" } = props;
   const {
     open,
     setOpen,
@@ -478,22 +571,27 @@ export function NewCategoryDialog(props: NewCategoryDialogProps) {
     <Dialog open={open} onOpenChange={setOpen}>
       {children ? <DialogTrigger asChild>{children}</DialogTrigger> : null}
       <DialogContent className="overflow-y-auto sm:h-[50vh] sm:w-[50vw] sm:max-w-none">
-        <CategoryDialogHeader isEditing={isEditing} t={t} />
+        <CategoryDialogHeader isEditing={isEditing} purpose={purpose} t={t} />
 
         <form onSubmit={handleSubmit} className="h-fill w-fill space-y-4">
-          <CategoryNameField name={name} setName={setName} />
-          <CategoryIconPicker icon={icon} setIcon={setIcon} />
-          <CategoryGroupAndLimitFields
+          <CategoryDialogFields
             group={group}
-            isGroupLocked={isEditing}
+            icon={icon}
+            isEditing={isEditing}
             monthlyLimit={monthlyLimit}
+            name={name}
+            purpose={purpose}
             setGroup={setGroup}
+            setIcon={setIcon}
             setMonthlyLimit={setMonthlyLimit}
+            setName={setName}
+            t={t}
           />
           <CategoryDialogFooter
             isEditing={isEditing}
             isSaving={isSaving}
             setOpen={setOpen}
+            purpose={purpose}
           />
         </form>
       </DialogContent>

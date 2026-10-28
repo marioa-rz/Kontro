@@ -30,11 +30,17 @@ vi.mock("sonner", () => ({
 }));
 
 const translations: Record<string, string> = {
+  "common.expense": "Expense",
+  "common.income": "Income",
+  "common.saving": "Savings",
   "category.createValidationError": "Name is required",
   "category.updateSuccess": "Category updated",
   "category.createSuccess": "Category created",
   "category.updateError": "Could not update category",
   "category.createError": "Could not create category",
+  "category.expenseType": "Expense type",
+  "category.expenseTypeEssential": "Essential expense",
+  "category.expenseTypePersonal": "Personal expense",
   "screen.categories.editCategory": "Edit category",
   "screen.categories.newCategory": "New category",
   "category.editDescription": "Edit an existing category",
@@ -443,6 +449,29 @@ describe("NewCategoryDialog", () => {
     await vi.waitFor(() => {
       expect(createCategoryAction).toHaveBeenCalledWith(
         expect.objectContaining({ group: "savings" }),
+      );
+    });
+  });
+
+  it("preserves the internal budget group when creating a personal expense", async () => {
+    const createCategoryAction = vi.fn().mockResolvedValue(undefined);
+    render(
+      <NewCategoryDialog
+        open
+        createCategoryAction={createCategoryAction}
+        onOpenChange={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Personal expense"));
+    fireEvent.change(screen.getByPlaceholderText("e.g. Groceries"), {
+      target: { value: "Cinema" },
+    });
+    fireEvent.click(screen.getByText("Create"));
+
+    await vi.waitFor(() => {
+      expect(createCategoryAction).toHaveBeenCalledWith(
+        expect.objectContaining({ group: "wants", name: "Cinema" }),
       );
     });
   });

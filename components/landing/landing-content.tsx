@@ -21,7 +21,7 @@ function LandingHeader({ t }: { t: Translate }) {
     <header className="flex flex-col items-center gap-3 pt-12 pb-6 px-4">
       <div className="flex items-center gap-3">
         <Image
-          src="/dragg-icon.svg"
+          src="/kontro-icon.svg"
           alt=""
           width={40}
           height={40}

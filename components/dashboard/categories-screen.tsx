@@ -19,7 +19,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   type CategoryOverviewItem,
@@ -27,7 +26,24 @@ import {
   type UpdateCategoryInput,
 } from "@/lib/finance/transactions";
 import { useI18n } from "@/lib/i18n";
-import { cn } from "@/lib/utils";
+
+type MovementCategoryTab = "all" | "expense" | "income" | "saving";
+
+function movementTypeForGroup(group: CategoryOverviewItem["group"]) {
+  if (group === "income") return "income";
+  if (group === "savings") return "saving";
+  return "expense";
+}
+
+export function filterCategoriesByMovementType(
+  categories: CategoryOverviewItem[],
+  activeTab: MovementCategoryTab,
+) {
+  if (activeTab === "all") return categories;
+  return categories.filter(
+    (category) => movementTypeForGroup(category.group) === activeTab,
+  );
+}
 
 type CategoriesScreenProps = {
   readonly categories: CategoryOverviewItem[];
@@ -68,7 +84,7 @@ function CategoryIconLabel({ category }: CategoryIconLabelProps) {
             color: category.color,
           }}
         >
-          {t(`data.group.${category.group}`)}
+          {t(`common.${movementTypeForGroup(category.group)}`)}
         </Badge>
       </div>
     </div>
@@ -140,81 +156,6 @@ function CategoryCardHeader({
   );
 }
 
-type CategoryCardBudgetProps = {
-  readonly category: CategoryOverviewItem;
-};
-
-function IncomeCategoryAmount({ category }: CategoryCardBudgetProps) {
-  const { formatCurrency, t } = useI18n();
-  return (
-    <div className="flex items-center justify-between rounded-lg bg-income/10 px-3 py-2">
-      <span className="text-sm text-muted-foreground">
-        {t("category.receivedThisMonth")}
-      </span>
-      <span className="font-semibold text-income">
-        {formatCurrency(category.spent)}
-      </span>
-    </div>
-  );
-}
-
-function CategoryCardBudget({ category }: CategoryCardBudgetProps) {
-  const { formatCurrency, t } = useI18n();
-
-  if (category.group === "income") {
-    return <IncomeCategoryAmount category={category} />;
-  }
-
-  if (category.monthlyLimit <= 0) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        {t("category.noMonthlyLimit")}
-      </p>
-    );
-  }
-
-  const percentage = Math.round((category.spent / category.monthlyLimit) * 100);
-  const isOverBudget = percentage > 100;
-
-  return (
-    <>
-      <div className="mb-2 flex justify-between text-sm">
-        <span className="text-muted-foreground">{t("common.spent")}</span>
-        <span
-          className={cn(
-            "font-medium",
-            isOverBudget ? "text-destructive" : "text-foreground",
-          )}
-        >
-          {formatCurrency(category.spent)} /{" "}
-          {formatCurrency(category.monthlyLimit)}
-        </span>
-      </div>
-      <div
-        className="overflow-hidden rounded-full bg-secondary"
-        style={{
-          // @ts-expect-error CSS variable
-          "--progress-foreground": isOverBudget
-            ? "var(--destructive)"
-            : category.color,
-        }}
-      >
-        <Progress value={Math.min(percentage, 100)} className="h-2" />
-      </div>
-      <p
-        className={cn(
-          "mt-2 text-xs",
-          isOverBudget ? "text-destructive" : "text-muted-foreground",
-        )}
-      >
-        {isOverBudget
-          ? `${percentage - 100}% ${t("common.overBudget")}`
-          : `${100 - percentage}% ${t("common.remaining")}`}
-      </p>
-    </>
-  );
-}
-
 function CategoryCard({
   category,
   createCategoryAction,
@@ -230,7 +171,6 @@ function CategoryCard({
           onRequestDelete={onRequestDelete}
           updateCategoryAction={updateCategoryAction}
         />
-        <CategoryCardBudget category={category} />
       </CardContent>
     </Card>
   );
@@ -280,9 +220,9 @@ function DeleteCategoryDialog({
 }
 
 type CategoriesHeaderProps = {
-  readonly activeTab: string;
+  readonly activeTab: MovementCategoryTab;
   readonly createCategoryAction: (data: CreateCategoryInput) => Promise<void>;
-  readonly setActiveTab: (tab: string) => void;
+  readonly setActiveTab: (tab: MovementCategoryTab) => void;
 };
 
 function CategoriesHeader({
@@ -307,22 +247,23 @@ function CategoriesHeader({
         }
       />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as MovementCategoryTab)}
+        className="mb-6"
+      >
         <TabsList className="flex h-auto w-full max-w-2xl flex-wrap justify-start">
           <TabsTrigger className="min-h-11 flex-1" value="all">
             {t("common.all")}
           </TabsTrigger>
-          <TabsTrigger className="min-h-11 flex-1" value="needs">
-            {t("data.group.needs")}
-          </TabsTrigger>
-          <TabsTrigger className="min-h-11 flex-1" value="wants">
-            {t("data.group.wants")}
-          </TabsTrigger>
-          <TabsTrigger className="min-h-11 flex-1" value="savings">
-            {t("data.group.savings")}
+          <TabsTrigger className="min-h-11 flex-1" value="expense">
+            {t("common.expense")}
           </TabsTrigger>
           <TabsTrigger className="min-h-11 flex-1" value="income">
-            {t("data.group.income")}
+            {t("common.income")}
+          </TabsTrigger>
+          <TabsTrigger className="min-h-11 flex-1" value="saving">
+            {t("common.saving")}
           </TabsTrigger>
         </TabsList>
       </Tabs>
@@ -413,7 +354,7 @@ export function CategoriesScreen({
   deleteCategoryAction,
   updateCategoryAction,
 }: CategoriesScreenProps) {
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState<MovementCategoryTab>("all");
   const [deletingCategory, setDeletingCategory] =
     useState<CategoryOverviewItem | null>(null);
   const { handleDeleteCategory, isPending } = useCategoryDeleteHandler(
@@ -422,10 +363,10 @@ export function CategoriesScreen({
     () => setDeletingCategory(null),
   );
 
-  const filteredCategories =
-    activeTab === "all"
-      ? categories
-      : categories.filter((category) => category.group === activeTab);
+  const filteredCategories = filterCategoriesByMovementType(
+    categories,
+    activeTab,
+  );
 
   return (
     <>

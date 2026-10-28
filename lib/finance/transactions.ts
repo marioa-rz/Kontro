@@ -63,6 +63,10 @@ export {
   type SubscriptionOverviewItem,
 } from "@/lib/finance/subscriptions";
 import { GROUP_COLORS } from "@/lib/finance/group-colors";
+import {
+  buildPeriodSummaries,
+  type PeriodSummaries,
+} from "@/lib/finance/period-summary";
 import { createClient } from "@/lib/supabase/server";
 
 export { buildExpensesByCategoryData };
@@ -117,6 +121,7 @@ type TransactionRow = {
   categories: CategoryRow | null;
   category_id: string | null;
   payment_method_id: string | null;
+  personal_debt_id?: string | null;
   payment_methods: PaymentMethodRow | null;
 };
 
@@ -222,7 +227,7 @@ export type CreatePaymentMethodInput = {
   creditLimit?: number;
   dueDay?: number | null;
   name: string;
-  type: UpdatePaymentMethodInput["type"];
+  type: Exclude<UpdatePaymentMethodInput["type"], "cash" | "pix">;
 };
 
 export type CreateInvoiceAdvancePaymentInput = {
@@ -275,7 +280,7 @@ export type UpdatePaymentMethodInput = {
   dueDay?: number | null;
   id: string;
   name: string;
-  type: Exclude<PaymentMethodRow["type"], "cash" | "pix">;
+  type: PaymentMethodRow["type"];
 };
 
 export type SummaryData = {
@@ -331,6 +336,7 @@ export type DailyExpensesOverTimeItem = {
 };
 
 export type ReportMonthlyItem = {
+  debtPayments: number;
   excessExpenses: number;
   expenses: number;
   grossSavings: number;
@@ -349,6 +355,7 @@ export type ReportTransactionItem = {
   description: string;
   financialMonth: string;
   paymentMethod: string | null;
+  personalDebtId: string | null;
   type: TransactionType;
 };
 
@@ -405,6 +412,7 @@ export type DashboardData = TransactionFormOptions & {
   expensesOverTime: ExpensesOverTimeItem[];
   dailyExpensesOverTime: DailyExpensesOverTimeItem[];
   latestTransactions: Transaction[];
+  periodSummaries: PeriodSummaries;
   summaryData: SummaryData;
 };
 
@@ -431,6 +439,15 @@ const monthKeys = [
 
 const categoryGroups = ["needs", "wants", "savings", "income"] as const;
 const editablePaymentMethodTypes = [
+  "bank",
+  "boleto",
+  "cash",
+  "credit",
+  "debit",
+  "other",
+  "pix",
+] as const;
+const creatablePaymentMethodTypes = [
   "bank",
   "boleto",
   "credit",
@@ -484,6 +501,7 @@ const transactionSelect = `
   notes,
   category_id,
   payment_method_id,
+  personal_debt_id,
   categories (
     id,
     name,
@@ -502,6 +520,36 @@ const transactionSelect = `
 `;
 
 const transactionSelectWithoutAdvancedMetadata = `
+  id,
+  date,
+  description,
+  amount,
+  kind,
+  installment_group_id,
+  installment_number,
+  installment_total,
+  notes,
+  category_id,
+  payment_method_id,
+  personal_debt_id,
+  categories (
+    id,
+    name,
+    icon,
+    group_type,
+    is_default,
+    monthly_limit
+  ),
+  payment_methods (
+    id,
+    name,
+    closing_day,
+    due_day,
+    type
+  )
+`;
+
+const transactionSelectBeforeDebtMetadata = `
   id,
   date,
   description,
@@ -597,6 +645,14 @@ function isEditablePaymentMethodType(
 ): value is UpdatePaymentMethodInput["type"] {
   return editablePaymentMethodTypes.includes(
     value as UpdatePaymentMethodInput["type"],
+  );
+}
+
+function isCreatablePaymentMethodType(
+  value: string,
+): value is CreatePaymentMethodInput["type"] {
+  return creatablePaymentMethodTypes.includes(
+    value as CreatePaymentMethodInput["type"],
   );
 }
 
@@ -1051,6 +1107,7 @@ function toTransaction(row: TransactionRow): Transaction {
     paymentMethodClosingDay: resolveTransactionPaymentMethodClosingDay(row),
     paymentMethodDueDay: resolveTransactionPaymentMethodDueDay(row),
     paymentMethodKey,
+    personalDebtId: row.personal_debt_id ?? null,
     paymentMethodType: row.payment_methods?.type ?? null,
     type: row.kind,
   };
@@ -1128,14 +1185,21 @@ function getMonthlyFinanceSummary(transactions: Transaction[]) {
     .filter((transaction) => transaction.type === "income")
     .reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0);
   const expenses = transactions
-    .filter((transaction) => transaction.type === "expense")
+    .filter(
+      (transaction) =>
+        transaction.type === "expense" && !transaction.personalDebtId,
+    )
+    .reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0);
+  const debtPayments = transactions
+    .filter((transaction) => transaction.personalDebtId)
     .reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0);
   const grossSavings = transactions
     .filter((transaction) => transaction.type === "saving")
     .reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0);
-  const excessExpenses = Math.max(expenses - income, 0);
+  const excessExpenses = Math.max(expenses + debtPayments - income, 0);
 
   return {
+    debtPayments,
     excessExpenses,
     expenses,
     grossSavings,
@@ -1219,10 +1283,6 @@ async function listPaymentMethods(options?: {
   return (data ?? []) as PaymentMethodRow[];
 }
 
-function isProtectedPaymentMethod(paymentMethod: PaymentMethodRow) {
-  return paymentMethod.type === "cash" || paymentMethod.type === "pix";
-}
-
 async function getCategoryForMutation(categoryId: string) {
   assertUuid(categoryId, "Category");
 
@@ -1290,7 +1350,7 @@ function buildPaymentMethodOverviewItem(
   });
 
   return {
-    canModify: !isProtectedPaymentMethod(paymentMethod),
+    canModify: true,
     closingDay,
     creditLimit: Number(paymentMethod.credit_limit ?? 0),
     detail,
@@ -2387,7 +2447,7 @@ export async function createPaymentMethod(input: CreatePaymentMethodInput) {
   const closingDay =
     input.type === "credit" ? (input.closingDay ?? null) : null;
 
-  if (!isEditablePaymentMethodType(input.type)) {
+  if (!isCreatablePaymentMethodType(input.type)) {
     throw new Error("Payment method type is invalid.");
   }
 
@@ -2437,13 +2497,7 @@ export async function updatePaymentMethod(input: UpdatePaymentMethodInput) {
   assertUuid(input.id, "Payment method");
   const { name, creditLimit, dueDay, closingDay, type } =
     resolveUpdatePaymentMethodInput(input);
-  const { paymentMethod, supabase, userId } = await getPaymentMethodForMutation(
-    input.id,
-  );
-
-  if (isProtectedPaymentMethod(paymentMethod)) {
-    throw new Error("This payment method cannot be edited.");
-  }
+  const { supabase, userId } = await getPaymentMethodForMutation(input.id);
 
   const { error } = await supabase
     .from("payment_methods")
@@ -2464,12 +2518,8 @@ export async function updatePaymentMethod(input: UpdatePaymentMethodInput) {
 
 export async function deletePaymentMethod(paymentMethodId: string) {
   assertUuid(paymentMethodId, "Payment method");
-  const { paymentMethod, supabase, userId } =
+  const { supabase, userId } =
     await getPaymentMethodForMutation(paymentMethodId);
-
-  if (isProtectedPaymentMethod(paymentMethod)) {
-    throw new Error("This payment method cannot be deleted.");
-  }
 
   const { error } = await supabase
     .from("payment_methods")
@@ -2489,28 +2539,26 @@ function resolveGoalInput(
   const name = assertNonEmptyString(input.name, "Goal name");
   const icon = assertNonEmptyString(input.icon, "Goal icon", 32);
   const targetAmount = Number(input.targetAmount);
-  const currentAmount = Number(input.currentAmount ?? 0);
   const deadline = toIsoDate(input.deadline);
 
   assertPositiveFiniteAmount(targetAmount, "Target amount");
-  if (!Number.isFinite(currentAmount) || currentAmount < 0) {
-    throw new Error("Current amount is invalid.");
-  }
   assertValidIsoDate(deadline);
   assertDateNotBeforeUserCreated(deadline, createdAt);
   assertValidColor(input.color);
 
-  return { name, icon, targetAmount, currentAmount, deadline };
+  return { name, icon, targetAmount, deadline };
 }
 
 export async function createGoal(input: CreateGoalInput) {
   const { createdAt, supabase, userId } = await getUserContext();
-  const { name, icon, targetAmount, currentAmount, deadline } =
-    resolveGoalInput(input, createdAt);
+  const { name, icon, targetAmount, deadline } = resolveGoalInput(
+    input,
+    createdAt,
+  );
 
   const { error } = await supabase.from("goals").insert({
     color: input.color,
-    current_amount: Math.min(currentAmount, targetAmount),
+    current_amount: 0,
     deadline,
     icon,
     name,
@@ -2526,14 +2574,30 @@ export async function createGoal(input: CreateGoalInput) {
 export async function updateGoal(input: UpdateGoalInput) {
   assertUuid(input.id, "Goal");
   const { createdAt, supabase, userId } = await getUserContext();
-  const { name, icon, targetAmount, currentAmount, deadline } =
-    resolveGoalInput(input, createdAt);
+  const { name, icon, targetAmount, deadline } = resolveGoalInput(
+    input,
+    createdAt,
+  );
+
+  const { data: existingGoal, error: goalError } = await supabase
+    .from("goals")
+    .select("current_amount")
+    .eq("id", input.id)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (goalError) {
+    throw new Error(`Unable to load goal: ${goalError.message}`);
+  }
+  if (!existingGoal) throw new Error("Goal not found.");
+  if (targetAmount < Number(existingGoal.current_amount)) {
+    throw new Error("Target amount cannot be lower than saved progress.");
+  }
 
   const { error } = await supabase
     .from("goals")
     .update({
       color: input.color,
-      current_amount: Math.min(currentAmount, targetAmount),
       deadline,
       icon,
       name,
@@ -2552,18 +2616,25 @@ export async function addGoalFunds(goalId: string, amount: number) {
   assertPositiveFiniteAmount(amount, "Amount");
   const { supabase, userId } = await getUserContext();
 
-  const { data, error } = await supabase.rpc("add_goal_funds", {
-    p_goal_id: goalId,
-    p_user_id: userId,
+  const { data, error } = await supabase.rpc("record_goal_contribution", {
     p_amount: amount,
+    p_date: getTodayValue(),
+    p_description: encryptDescription("transaction.goalContribution"),
+    p_goal_id: goalId,
+    p_notes: encryptField(`goal:${goalId}`),
+    p_user_id: userId,
   });
 
   if (error) {
     throw new Error(`Unable to add goal funds: ${error.message}`);
   }
 
-  if (!data) {
+  if (data === null) {
     throw new Error("Goal not found.");
+  }
+
+  if (Number(data) <= 0) {
+    throw new Error("Goal is already complete.");
   }
 }
 
@@ -3243,6 +3314,32 @@ async function fetchLegacyTransactionRows(
   const { data, error } = await fallbackQuery;
 
   if (error) {
+    if (error.code === "42703") {
+      return fetchPreDebtTransactionRows(supabase, userId, params);
+    }
+    throw new Error(`Unable to load transactions: ${error.message}`);
+  }
+
+  return (data ?? []) as unknown as TransactionRow[];
+}
+
+async function fetchPreDebtTransactionRows(
+  supabase: SupabaseClient,
+  userId: string,
+  params: FetchTransactionRowsParams,
+) {
+  const query = applyTransactionDateRange(
+    supabase
+      .from("transactions")
+      .select(transactionSelectBeforeDebtMetadata)
+      .eq("user_id", userId)
+      .order("date", { ascending: false })
+      .order("created_at", { ascending: false }),
+    params,
+  );
+  const { data, error } = await query;
+
+  if (error) {
     throw new Error(`Unable to load transactions: ${error.message}`);
   }
 
@@ -3518,6 +3615,10 @@ async function fetchDashboardSourceData(
   };
 }
 
+function isConsumptionExpense(transaction: Transaction) {
+  return transaction.type === "expense" && !transaction.personalDebtId;
+}
+
 function buildDashboardSummaryData({
   transactions,
   previousTransactions,
@@ -3532,14 +3633,18 @@ function buildDashboardSummaryData({
   previousTotalSaved: number;
 }) {
   const totalIncome = sumTransactionsByType(transactions, "income");
-  const totalExpenses = sumTransactionsByType(transactions, "expense");
+  const expenseTransactions = transactions.filter(isConsumptionExpense);
+  const debtPayments = transactions
+    .filter((transaction) => transaction.personalDebtId)
+    .reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0);
+  const totalExpenses = sumTransactionsByType(expenseTransactions, "expense");
   const totalMonthSavings = sumTransactionsByType(transactions, "saving");
   const previousTotalIncome = sumTransactionsByType(
     previousTransactions,
     "income",
   );
   const previousTotalExpenses = sumTransactionsByType(
-    previousTransactions,
+    previousTransactions.filter(isConsumptionExpense),
     "expense",
   );
   const predictedExpenses = scheduledExpenseTransactions.reduce(
@@ -3548,7 +3653,8 @@ function buildDashboardSummaryData({
   );
 
   return {
-    currentBalance: totalIncome - totalExpenses - totalMonthSavings,
+    currentBalance:
+      totalIncome - totalExpenses - totalMonthSavings - debtPayments,
     predictedExpenses,
     totalExpenses,
     totalIncome,
@@ -3596,19 +3702,29 @@ function buildDashboardBudgetContext(
   scheduledTransactions: Transaction[],
   trendTransactions: Transaction[],
 ) {
-  const trendExpenseTransactions = trendTransactions.filter(
-    (transaction) => transaction.type === "expense",
+  const actualBudgetTransactions = transactions.filter(
+    (transaction) => !transaction.personalDebtId,
   );
-  const scheduledExpenseTransactions = scheduledTransactions.filter(
-    (transaction) => transaction.type === "expense",
+  const scheduledBudgetTransactions = scheduledTransactions.filter(
+    (transaction) => !transaction.personalDebtId,
   );
+  const trendExpenseTransactions =
+    trendTransactions.filter(isConsumptionExpense);
+  const scheduledExpenseTransactions =
+    scheduledTransactions.filter(isConsumptionExpense);
   const budgetData = calculateBudgetData(
     sumTransactionsByType(transactions, "income"),
-    sumBudgetUsageByGroup(transactions),
-    sumBudgetUsageByGroup(scheduledTransactions),
+    sumBudgetUsageByGroup(actualBudgetTransactions),
+    sumBudgetUsageByGroup(scheduledBudgetTransactions),
   );
 
-  return { trendExpenseTransactions, scheduledExpenseTransactions, budgetData };
+  return {
+    actualBudgetTransactions,
+    budgetData,
+    scheduledBudgetTransactions,
+    scheduledExpenseTransactions,
+    trendExpenseTransactions,
+  };
 }
 
 function buildDashboardBudgetSplitData(
@@ -3645,38 +3761,42 @@ function buildDashboardBudgetSplitData(
   ];
 }
 
+type AssembleDashboardDataInput = {
+  monthBuckets: ReturnType<typeof getLastSixMonthKeys>;
+  sourceData: Awaited<ReturnType<typeof fetchDashboardSourceData>>;
+  budgetContext: ReturnType<typeof buildDashboardBudgetContext>;
+  summaryEndDate: string;
+};
+
 function assembleDashboardData({
   monthBuckets,
   sourceData,
   budgetContext,
-}: {
-  monthBuckets: ReturnType<typeof getLastSixMonthKeys>;
-  sourceData: Awaited<ReturnType<typeof fetchDashboardSourceData>>;
-  budgetContext: ReturnType<typeof buildDashboardBudgetContext>;
-}): DashboardData {
+  summaryEndDate,
+}: AssembleDashboardDataInput): DashboardData {
   const {
     transactions,
     previousTransactions,
-    scheduledTransactions,
     displayTransactions,
     displayScheduledTransactions,
     totalSaved,
     previousTotalSaved,
-    categories,
-    paymentMethods,
   } = sourceData;
-  const { trendExpenseTransactions, scheduledExpenseTransactions, budgetData } =
-    budgetContext;
+  const { scheduledExpenseTransactions, budgetData } = budgetContext;
 
   return {
     budgetData,
     budgetSplitData: buildDashboardBudgetSplitData(budgetData),
-    categories,
-    dailyExpensesOverTime: buildDailyExpensesOverTime(transactions),
-    expensesByCategory: buildExpensesByCategoryData(scheduledTransactions),
+    categories: sourceData.categories,
+    dailyExpensesOverTime: buildDailyExpensesOverTime(
+      budgetContext.actualBudgetTransactions,
+    ),
+    expensesByCategory: buildExpensesByCategoryData(
+      budgetContext.scheduledBudgetTransactions,
+    ),
     expensesOverTime: buildExpensesOverTimeData(
       monthBuckets,
-      trendExpenseTransactions,
+      budgetContext.trendExpenseTransactions,
       scheduledExpenseTransactions,
     ),
     latestTransactions: mergeLatestTransactions(
@@ -3684,7 +3804,11 @@ function assembleDashboardData({
       displayScheduledTransactions,
       getTodayValue(),
     ),
-    paymentMethods,
+    periodSummaries: buildPeriodSummaries(
+      sourceData.trendTransactions,
+      summaryEndDate,
+    ),
+    paymentMethods: sourceData.paymentMethods,
     summaryData: buildDashboardSummaryData({
       transactions,
       previousTransactions,
@@ -3714,7 +3838,25 @@ export async function getDashboardData(
     sourceData.trendTransactions,
   );
 
-  return assembleDashboardData({ monthBuckets, sourceData, budgetContext });
+  const summaryEndDate =
+    selectedMonth === getGuatemalaMonthValue()
+      ? getTodayValue()
+      : new Date(
+          Date.UTC(
+            Number(selectedMonth.slice(0, 4)),
+            Number(selectedMonth.slice(5, 7)),
+            0,
+          ),
+        )
+          .toISOString()
+          .slice(0, 10);
+
+  return assembleDashboardData({
+    monthBuckets,
+    sourceData,
+    budgetContext,
+    summaryEndDate,
+  });
 }
 
 function buildMonthlyReports({
@@ -3761,6 +3903,7 @@ function buildReportTransactions(
       description: transaction.descriptionKey,
       financialMonth,
       paymentMethod: transaction.paymentMethodKey ?? null,
+      personalDebtId: transaction.personalDebtId ?? null,
       type: transaction.type,
     }))
     .sort((left, right) => right.date.localeCompare(left.date));

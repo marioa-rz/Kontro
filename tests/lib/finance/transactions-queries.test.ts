@@ -309,17 +309,25 @@ describe("listPaymentMethodOverview", () => {
     due_day: null,
     closing_day: null,
   };
+  const pmCash = {
+    id: "67676767-6767-4767-8767-676767676767",
+    name: "Efectivo",
+    type: "cash" as const,
+    credit_limit: null,
+    due_day: null,
+    closing_day: null,
+  };
 
   it("computes details for both credit and non-credit payment methods, with an explicit userContext", async () => {
     const ctx = makeCtx([
-      qb({ data: [pmCredit, pmBank], error: null }),
+      qb({ data: [pmCredit, pmBank, pmCash], error: null }),
       qb({ data: [], error: null }),
       qb({ data: [], error: null }),
     ]);
 
     const overview = await listPaymentMethodOverview(CURRENT_MONTH, ctx);
 
-    expect(overview).toHaveLength(2);
+    expect(overview).toHaveLength(3);
     const credit = overview.find((item) => item.id === pmCredit.id);
     const bank = overview.find((item) => item.id === pmBank.id);
     expect(credit?.creditLimit).toBe(2000);
@@ -328,6 +336,9 @@ describe("listPaymentMethodOverview", () => {
     expect(bank?.creditLimit).toBe(0);
     expect(bank?.closingDay).toBeNull();
     expect(bank?.dueDay).toBeNull();
+    expect(overview.find((item) => item.id === pmCash.id)?.canModify).toBe(
+      true,
+    );
   });
 
   it("translates well-known default payment method names for every known type", async () => {

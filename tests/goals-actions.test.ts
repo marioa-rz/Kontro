@@ -68,6 +68,8 @@ describe("addGoalFundsAction", () => {
 
     expect(addGoalFunds).toHaveBeenCalledWith(uuid, 250);
     expect(revalidatePath).toHaveBeenCalledWith("/goals");
+    expect(revalidatePath).toHaveBeenCalledWith("/transactions");
+    expect(revalidatePath).toHaveBeenCalledWith("/reports");
   });
 });
 

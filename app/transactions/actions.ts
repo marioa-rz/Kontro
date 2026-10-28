@@ -118,12 +118,13 @@ const updatePaymentMethodActionSchema = z
     dueDay: z.number().int().min(1).max(31).nullable().optional(),
     id: uuidSchema,
     name: safeShortTextSchema,
-    type: z.enum(["bank", "boleto", "credit", "debit", "other"]),
+    type: z.enum(["bank", "boleto", "cash", "credit", "debit", "other", "pix"]),
   })
   .strict();
 
 const createPaymentMethodActionSchema = updatePaymentMethodActionSchema
-  .omit({ id: true })
+  .omit({ id: true, type: true })
+  .extend({ type: z.enum(["bank", "boleto", "credit", "debit", "other"]) })
   .strict();
 
 const createInvoiceAdvancePaymentActionSchema = z
@@ -184,6 +185,7 @@ export async function createCategoryAction(data: CreateCategoryInput) {
 
   await createCategory(parsed);
 
+  revalidatePath("/budgets");
   revalidatePath("/categories");
   revalidatePath("/dashboard");
   revalidatePath("/transactions");
@@ -195,6 +197,7 @@ export async function updateCategoryAction(data: UpdateCategoryInput) {
 
   await updateCategory(parsed);
 
+  revalidatePath("/budgets");
   revalidatePath("/categories");
   revalidatePath("/dashboard");
   revalidatePath("/transactions");
@@ -206,6 +209,7 @@ export async function deleteCategoryAction(categoryId: string) {
 
   await deleteCategory(parsedCategoryId);
 
+  revalidatePath("/budgets");
   revalidatePath("/categories");
   revalidatePath("/dashboard");
   revalidatePath("/transactions");

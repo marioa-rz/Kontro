@@ -170,7 +170,10 @@ type GoalsScreenState = ReturnType<typeof useGoalsScreenState>;
 
 type GoalHandlerActions = Pick<
   GoalsScreenProps,
-  "addGoalFundsAction" | "createGoalAction" | "deleteGoalAction" | "updateGoalAction"
+  | "addGoalFundsAction"
+  | "createGoalAction"
+  | "deleteGoalAction"
+  | "updateGoalAction"
 >;
 
 function buildGoalSavePayload(goalForm: GoalFormState) {
@@ -275,8 +278,13 @@ function useAddGoalFundsHandler({
   t: (key: string) => string;
 }) {
   const router = useRouter();
-  const { startTransition, fundingGoal, setFundingGoal, fundAmount, setFundAmount } =
-    state;
+  const {
+    startTransition,
+    fundingGoal,
+    setFundingGoal,
+    fundAmount,
+    setFundAmount,
+  } = state;
 
   return () => {
     if (!fundingGoal) return;
@@ -363,7 +371,11 @@ function useGoalHandlers({
   actions: GoalHandlerActions;
   t: (key: string) => string;
 }) {
-  const { openGoalDialog, handleSaveGoal } = useGoalSaveHandlers({ state, actions, t });
+  const { openGoalDialog, handleSaveGoal } = useGoalSaveHandlers({
+    state,
+    actions,
+    t,
+  });
   const { handleAddFunds, handleDeleteGoal } = useGoalFundsAndDeleteHandlers({
     state,
     actions,
@@ -407,8 +419,12 @@ function GoalsOverviewCard({
           </div>
           <div className="flex items-center gap-8">
             <div className="text-center">
-              <p className="text-3xl font-bold text-primary">{overallProgress}%</p>
-              <p className="text-sm text-muted-foreground">{t("common.complete")}</p>
+              <p className="text-3xl font-bold text-primary">
+                {overallProgress}%
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {t("common.complete")}
+              </p>
             </div>
             <div className="text-center">
               <p className="text-3xl font-bold text-foreground">{goalsCount}</p>
@@ -453,7 +469,10 @@ function GoalCardMenu({
           <Pencil className="mr-2 size-4" />
           {t("common.edit")}
         </DropdownMenuItem>
-        <DropdownMenuItem className="text-destructive" onClick={() => onDelete(goal)}>
+        <DropdownMenuItem
+          className="text-destructive"
+          onClick={() => onDelete(goal)}
+        >
           <Trash2 className="mr-2 size-4" />
           {t("common.delete")}
         </DropdownMenuItem>
@@ -462,6 +481,15 @@ function GoalCardMenu({
   );
 }
 
+type GoalCardHeaderProps = {
+  goal: GoalOverviewItem;
+  percentage: number;
+  isOnTrack: boolean;
+  onEdit: GoalCardCallbacks["onEdit"];
+  onDelete: GoalCardCallbacks["onDelete"];
+  t: (key: string) => string;
+};
+
 function GoalCardHeader({
   goal,
   percentage,
@@ -469,14 +497,7 @@ function GoalCardHeader({
   onEdit,
   onDelete,
   t,
-}: {
-  goal: GoalOverviewItem;
-  percentage: number;
-  isOnTrack: boolean;
-  onEdit: GoalCardCallbacks["onEdit"];
-  onDelete: GoalCardCallbacks["onDelete"];
-  t: (key: string) => string;
-}) {
+}: GoalCardHeaderProps) {
   return (
     <div className="mb-4 flex items-start justify-between gap-3">
       <div className="flex items-center gap-3">
@@ -492,7 +513,9 @@ function GoalCardHeader({
             variant="secondary"
             className={cn(
               "mt-1 text-xs",
-              isOnTrack ? "bg-income/20 text-income" : "bg-yellow/20 text-yellow",
+              isOnTrack
+                ? "bg-income/20 text-income"
+                : "bg-yellow/20 text-yellow",
             )}
           >
             {isOnTrack ? t("common.onTrack") : t("common.behind")}
@@ -502,7 +525,9 @@ function GoalCardHeader({
       <div className="flex items-start gap-2">
         <div className="text-right">
           <p className="text-2xl font-bold text-foreground">{percentage}%</p>
-          <p className="text-xs text-muted-foreground">{t("common.complete")}</p>
+          <p className="text-xs text-muted-foreground">
+            {t("common.complete")}
+          </p>
         </div>
         <GoalCardMenu goal={goal} onEdit={onEdit} onDelete={onDelete} t={t} />
       </div>
@@ -528,7 +553,9 @@ function GoalCardStats({
       <div className="flex items-center gap-2">
         <Calendar className="size-4 text-muted-foreground" />
         <div>
-          <p className="text-xs text-muted-foreground">{t("screen.goals.deadline")}</p>
+          <p className="text-xs text-muted-foreground">
+            {t("screen.goals.deadline")}
+          </p>
           <p
             className={cn(
               "text-sm font-medium",
@@ -567,7 +594,13 @@ function getGoalCardMetrics(goal: GoalOverviewItem) {
   const isOnTrack =
     percentage >= 100 - (Math.max(daysRemaining, 0) / 365) * 100;
 
-  return { percentage, daysRemaining, monthlyNeeded, isCloseToDeadline, isOnTrack };
+  return {
+    percentage,
+    daysRemaining,
+    monthlyNeeded,
+    isCloseToDeadline,
+    isOnTrack,
+  };
 }
 
 function GoalCardProgressRow({
@@ -584,9 +617,12 @@ function GoalCardProgressRow({
   return (
     <div>
       <div className="mb-2 flex justify-between text-sm">
-        <span className="text-muted-foreground">{t("screen.goals.progress")}</span>
+        <span className="text-muted-foreground">
+          {t("screen.goals.progress")}
+        </span>
         <span className="font-medium text-foreground">
-          {formatCurrency(goal.currentAmount)} / {formatCurrency(goal.targetAmount)}
+          {formatCurrency(goal.currentAmount)} /{" "}
+          {formatCurrency(goal.targetAmount)}
         </span>
       </div>
       <Progress value={percentage} className="h-3" />
@@ -704,7 +740,9 @@ function GoalIconPicker({
           type="button"
           className={cn(
             "flex size-9 items-center justify-center rounded-md border bg-background text-lg",
-            value === icon ? "border-primary ring-2 ring-primary/40" : "border-border",
+            value === icon
+              ? "border-primary ring-2 ring-primary/40"
+              : "border-border",
           )}
           onClick={() => onChange(icon)}
         >
@@ -749,30 +787,28 @@ type GoalFormFieldsProps = {
 
 function GoalAmountFields({ goalForm, setGoalForm, t }: GoalFormFieldsProps) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="space-y-2">
       <div className="space-y-2">
         <CurrencyInput
           id="goal-target"
           label={t("goals.targetAmount")}
           value={goalForm.targetAmount}
-          onValueChange={(targetAmount) => setGoalForm({ ...goalForm, targetAmount })}
+          onValueChange={(targetAmount) =>
+            setGoalForm({ ...goalForm, targetAmount })
+          }
           labelClassName="normal-case tracking-normal text-foreground"
         />
       </div>
-      <div className="space-y-2">
-        <CurrencyInput
-          id="goal-current"
-          label={t("goals.currentAmount")}
-          value={goalForm.currentAmount}
-          onValueChange={(currentAmount) => setGoalForm({ ...goalForm, currentAmount })}
-          labelClassName="normal-case tracking-normal text-foreground"
-        />
-      </div>
+      <p className="text-xs text-muted-foreground">{t("goals.fundingHint")}</p>
     </div>
   );
 }
 
-function GoalIconAndColorFields({ goalForm, setGoalForm, t }: GoalFormFieldsProps) {
+function GoalIconAndColorFields({
+  goalForm,
+  setGoalForm,
+  t,
+}: GoalFormFieldsProps) {
   return (
     <>
       <div className="space-y-2">
@@ -801,7 +837,9 @@ function GoalFormFields({ goalForm, setGoalForm, t }: GoalFormFieldsProps) {
         <Input
           id="goal-name"
           value={goalForm.name}
-          onChange={(event) => setGoalForm({ ...goalForm, name: event.target.value })}
+          onChange={(event) =>
+            setGoalForm({ ...goalForm, name: event.target.value })
+          }
           placeholder={t("goals.namePlaceholder")}
         />
       </div>
@@ -812,11 +850,17 @@ function GoalFormFields({ goalForm, setGoalForm, t }: GoalFormFieldsProps) {
           id="goal-deadline"
           type="date"
           value={goalForm.deadline}
-          onChange={(event) => setGoalForm({ ...goalForm, deadline: event.target.value })}
+          onChange={(event) =>
+            setGoalForm({ ...goalForm, deadline: event.target.value })
+          }
           className="w-full max-w-full min-w-0 appearance-none overflow-hidden pr-3 text-left [&::-webkit-calendar-picker-indicator]:shrink-0 [&::-webkit-date-and-time-value]:min-w-0 [&::-webkit-date-and-time-value]:overflow-hidden [&::-webkit-date-and-time-value]:text-left"
         />
       </div>
-      <GoalIconAndColorFields goalForm={goalForm} setGoalForm={setGoalForm} t={t} />
+      <GoalIconAndColorFields
+        goalForm={goalForm}
+        setGoalForm={setGoalForm}
+        t={t}
+      />
     </div>
   );
 }
@@ -845,7 +889,9 @@ function GoalFormDialog({
       <DialogContent className="overflow-y-auto sm:h-[70vh] sm:w-[50vw] sm:max-w-none">
         <DialogHeader>
           <DialogTitle>
-            {editingGoal ? t("screen.goals.editGoal") : t("screen.goals.newGoal")}
+            {editingGoal
+              ? t("screen.goals.editGoal")
+              : t("screen.goals.newGoal")}
           </DialogTitle>
           <DialogDescription>{t("goals.formDescription")}</DialogDescription>
         </DialogHeader>
@@ -901,7 +947,11 @@ function AddFundsDialog({
           />
         </div>
         <DialogFooter>
-          <Button variant="outline" disabled={isPending} onClick={() => onOpenChange(false)}>
+          <Button
+            variant="outline"
+            disabled={isPending}
+            onClick={() => onOpenChange(false)}
+          >
             {t("common.cancel")}
           </Button>
           <Button disabled={isPending} onClick={onConfirm}>
@@ -931,10 +981,14 @@ function DeleteGoalDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t("goals.deleteTitle")}</AlertDialogTitle>
-          <AlertDialogDescription>{t("goals.deleteDescription")}</AlertDialogDescription>
+          <AlertDialogDescription>
+            {t("goals.deleteDescription")}
+          </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isPending}>{t("common.cancel")}</AlertDialogCancel>
+          <AlertDialogCancel disabled={isPending}>
+            {t("common.cancel")}
+          </AlertDialogCancel>
           <AlertDialogAction
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             disabled={isPending}
@@ -957,8 +1011,15 @@ function GoalFormDialogWrapper({
   handleSaveGoal: () => void;
   t: (key: string) => string;
 }) {
-  const { isPending, isGoalDialogOpen, setIsGoalDialogOpen, goalForm, setGoalForm, editingGoal, setEditingGoal } =
-    state;
+  const {
+    isPending,
+    isGoalDialogOpen,
+    setIsGoalDialogOpen,
+    goalForm,
+    setGoalForm,
+    editingGoal,
+    setEditingGoal,
+  } = state;
 
   return (
     <GoalFormDialog
@@ -988,8 +1049,15 @@ function GoalFundsAndDeleteDialogs({
   handleDeleteGoal: () => void;
   t: (key: string) => string;
 }) {
-  const { isPending, fundingGoal, setFundingGoal, fundAmount, setFundAmount, deletingGoal, setDeletingGoal } =
-    state;
+  const {
+    isPending,
+    fundingGoal,
+    setFundingGoal,
+    fundAmount,
+    setFundAmount,
+    deletingGoal,
+    setDeletingGoal,
+  } = state;
 
   return (
     <>
@@ -1036,7 +1104,11 @@ function GoalsScreenDialogs({
 }) {
   return (
     <>
-      <GoalFormDialogWrapper state={state} handleSaveGoal={handleSaveGoal} t={t} />
+      <GoalFormDialogWrapper
+        state={state}
+        handleSaveGoal={handleSaveGoal}
+        t={t}
+      />
       <GoalFundsAndDeleteDialogs
         state={state}
         handleAddFunds={handleAddFunds}
@@ -1068,15 +1140,22 @@ export function GoalsScreen(props: GoalsScreenProps) {
   const state = useGoalsScreenState(goals);
   const { openGoalDialog, handleSaveGoal, handleAddFunds, handleDeleteGoal } =
     useGoalHandlers({ state, actions: props, t });
-  const { setFundingGoal, setDeletingGoal, totalTarget, totalCurrent, overallProgress } =
-    state;
+  const {
+    setFundingGoal,
+    setDeletingGoal,
+    totalTarget,
+    totalCurrent,
+    overallProgress,
+  } = state;
 
   return (
     <>
       <PageHeader
         title={t("screen.goals.title")}
         description={t("screen.goals.description")}
-        actions={<NewGoalHeaderAction onCreate={() => openGoalDialog()} t={t} />}
+        actions={
+          <NewGoalHeaderAction onCreate={() => openGoalDialog()} t={t} />
+        }
       />
 
       <GoalsOverviewCard

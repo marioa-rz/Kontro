@@ -12,9 +12,9 @@ export function AuthCardHeader() {
   return (
     <div className="mb-8 flex items-start justify-between gap-3">
       <div className="flex items-center gap-3">
-        <div className="flex size-11 shrink-0 items-center justify-center rounded-md border border-white/10 bg-zinc-900 shadow-[0_0_28px_rgba(34,197,94,0.35)]">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-md border border-white/10 bg-zinc-900 shadow-[0_0_28px_rgba(190,18,60,0.35)]">
           <Image
-            src="/dragg-icon.svg"
+            src="/kontro-icon.svg"
             alt=""
             width={30}
             height={30}
@@ -28,7 +28,7 @@ export function AuthCardHeader() {
           <p className="text-2xl font-bold leading-none tracking-normal">
             Kontro
           </p>
-          <p className="mt-1 text-xs font-medium uppercase text-green-300">
+          <p className="mt-1 text-xs font-medium uppercase text-rose-300">
             {t("auth.kicker")}
           </p>
         </div>

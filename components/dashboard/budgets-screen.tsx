@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
-import { Download, Minus, TrendingDown, TrendingUp } from "lucide-react";
+import { Download } from "lucide-react";
 
+import { NewCategoryDialog } from "@/components/dashboard/new-category-dialog";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,18 +13,27 @@ import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import {
   type BudgetData,
-  type BudgetSplitItem,
   type CategoryOverviewItem,
+  type CreateCategoryInput,
+  type UpdateCategoryInput,
 } from "@/lib/finance/transactions";
 import { calculateBudgetUsage } from "@/lib/finance/budget";
-import { GROUP_COLORS } from "@/lib/finance/group-colors";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 type BudgetsScreenProps = {
   readonly budgetData: BudgetData;
-  readonly budgetSplitData: BudgetSplitItem[];
   readonly categories: CategoryOverviewItem[];
+  readonly createCategoryAction?: (data: CreateCategoryInput) => Promise<void>;
+  readonly updateCategoryAction?: (data: UpdateCategoryInput) => Promise<void>;
+};
+
+const unavailableCreateCategoryAction = async () => {
+  throw new Error("Category creation is unavailable on this screen.");
+};
+
+const unavailableUpdateCategoryAction = async () => {
+  throw new Error("Budget updates are unavailable on this screen.");
 };
 
 export function csvEscape(value: string | number | null) {
@@ -45,35 +55,6 @@ function buildBudgetTotals(budgetData: BudgetData) {
   const totalUsage = calculateBudgetUsage(totalSpent, totalBudget);
 
   return { totalBudget, totalSpent, totalPlannedSpent, totalUsage };
-}
-
-function buildBudgetGroups(budgetData: BudgetData, t: (key: string) => string) {
-  return [
-    {
-      description: t("data.category.needs"),
-      icon: "🏠",
-      key: "needs" as const,
-      name: t("data.group.needs"),
-      color: GROUP_COLORS.needs,
-      ...budgetData.needs,
-    },
-    {
-      description: t("data.category.leisure"),
-      icon: "🎉",
-      key: "wants" as const,
-      name: t("data.group.wants"),
-      color: GROUP_COLORS.wants,
-      ...budgetData.wants,
-    },
-    {
-      description: t("data.category.investments"),
-      icon: "💰",
-      key: "savings" as const,
-      name: t("data.group.savings"),
-      color: GROUP_COLORS.savings,
-      ...budgetData.savings,
-    },
-  ];
 }
 
 function buildBudgetCsvRows({
@@ -138,10 +119,6 @@ function useBudgetsScreenState({
   const { t } = useI18n();
   const [includePlanned, setIncludePlanned] = useState(false);
   const totals = buildBudgetTotals(budgetData);
-  const budgetGroups = useMemo(
-    () => buildBudgetGroups(budgetData, t),
-    [budgetData, t],
-  );
   const downloadCsv = () =>
     downloadBudgetCsv({ budgetData, includePlanned, t });
 
@@ -149,7 +126,6 @@ function useBudgetsScreenState({
     includePlanned,
     setIncludePlanned,
     ...totals,
-    budgetGroups,
     downloadCsv,
   };
 }
@@ -251,7 +227,7 @@ function BudgetsToolbar({
   readonly t: (key: string) => string;
 }) {
   return (
-    <div className="mb-4 flex items-center justify-end gap-4">
+    <div className="mb-4 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end sm:gap-4">
       <div className="flex items-center gap-2">
         <Switch
           id="include-planned"
@@ -269,7 +245,7 @@ function BudgetsToolbar({
         variant="outline"
         size="sm"
         onClick={downloadCsv}
-        className="gap-2"
+        className="gap-2 sm:w-auto"
       >
         <Download className="size-4" />
         {t("screen.budgets.exportCsv")}
@@ -278,214 +254,121 @@ function BudgetsToolbar({
   );
 }
 
-function getBudgetGroupTrend(usage: ReturnType<typeof calculateBudgetUsage>) {
-  if (usage.isOverBudget || usage.usagePercentage > 80) return "over" as const;
-  if (usage.usagePercentage > 50) return "normal" as const;
-  return "under" as const;
-}
-
-type BudgetGroupItem = ReturnType<typeof buildBudgetGroups>[number];
-
-function BudgetGroupHeader({
-  group,
-  displaySpent,
-  formatCurrency,
-}: {
-  readonly group: BudgetGroupItem;
-  readonly displaySpent: number;
-  readonly formatCurrency: (value: number) => string;
-}) {
-  return (
-    <div className="mb-2 flex items-center justify-between gap-3">
-      <div className="flex items-center gap-2">
-        <span className="text-xl">{group.icon}</span>
-        <div>
-          <p className="font-medium text-foreground">{group.name}</p>
-          <p className="text-xs text-muted-foreground">{group.description}</p>
-        </div>
-      </div>
-      <div className="text-right">
-        <p className="font-semibold text-foreground">
-          {formatCurrency(displaySpent)}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          {formatCurrency(group.budget)}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function BudgetGroupStatus({
-  usage,
-  trend,
-  formatCurrency,
-  t,
-}: {
-  readonly usage: ReturnType<typeof calculateBudgetUsage>;
-  readonly trend: ReturnType<typeof getBudgetGroupTrend>;
+type CategoryBudgetItemProps = {
+  readonly category: CategoryOverviewItem;
+  readonly createCategoryAction: (data: CreateCategoryInput) => Promise<void>;
   readonly formatCurrency: (value: number) => string;
   readonly t: (key: string) => string;
-}) {
+  readonly updateCategoryAction: (data: UpdateCategoryInput) => Promise<void>;
+};
+
+function ConfiguredCategoryBudget(props: CategoryBudgetItemProps) {
+  const { category, formatCurrency, t } = props;
+  const usage = calculateBudgetUsage(category.spent, category.monthlyLimit);
+
   return (
-    <div className="mt-1 flex items-center justify-between">
+    <>
       <span
         className={cn(
-          "flex items-center gap-1 text-xs",
-          usage.isOverBudget ? "text-destructive" : "text-muted-foreground",
-        )}
-      >
-        {trend === "over" && <TrendingUp className="size-3" />}
-        {trend === "under" && <TrendingDown className="size-3" />}
-        {trend === "normal" && <Minus className="size-3" />}
-        {t("common.spent")}: {formatCurrency(usage.spentAmount)}
-      </span>
-      <span
-        className={cn(
-          "text-xs",
+          "text-sm",
           usage.isOverBudget
             ? "font-medium text-destructive"
             : "text-muted-foreground",
         )}
       >
-        {usage.isOverBudget
-          ? `${formatCurrency(usage.exceededAmount)} ${t("common.overBudget")}`
-          : `${formatCurrency(usage.remainingAmount)} ${t("common.left")}`}
+        {formatCurrency(category.spent)} /{" "}
+        {formatCurrency(category.monthlyLimit)}
       </span>
-    </div>
-  );
-}
-
-function BudgetGroupRow({
-  group,
-  includePlanned,
-  formatCurrency,
-  t,
-}: {
-  readonly group: BudgetGroupItem;
-  readonly includePlanned: boolean;
-  readonly formatCurrency: (value: number) => string;
-  readonly t: (key: string) => string;
-}) {
-  /* c8 ignore next */
-  const displaySpent = includePlanned ? group.plannedSpent : group.spent;
-  const usage = calculateBudgetUsage(displaySpent, group.budget);
-  const trend = getBudgetGroupTrend(usage);
-
-  return (
-    <div>
-      <BudgetGroupHeader
-        group={group}
-        displaySpent={displaySpent}
-        formatCurrency={formatCurrency}
-      />
       <div
-        className="overflow-hidden rounded-full bg-secondary"
+        className="col-span-2 overflow-hidden rounded-full bg-secondary"
         style={{
           // @ts-expect-error CSS variable
-          "--progress-foreground": group.color,
-        }}
-      >
-        <Progress value={usage.progressValue} className="h-3" />
-      </div>
-      <BudgetGroupStatus
-        usage={usage}
-        trend={trend}
-        formatCurrency={formatCurrency}
-        t={t}
-      />
-    </div>
-  );
-}
-
-function BudgetGroupsCard({
-  budgetGroups,
-  includePlanned,
-  formatCurrency,
-  t,
-}: {
-  readonly budgetGroups: BudgetGroupItem[];
-  readonly includePlanned: boolean;
-  readonly formatCurrency: (value: number) => string;
-  readonly t: (key: string) => string;
-}) {
-  return (
-    <Card className="border-border bg-card card-shadow">
-      <CardHeader>
-        <CardTitle className="text-lg">{t("screen.budgets.groups")}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {budgetGroups.map((group) => (
-          <BudgetGroupRow
-            key={group.key}
-            group={group}
-            includePlanned={includePlanned}
-            formatCurrency={formatCurrency}
-            t={t}
-          />
-        ))}
-      </CardContent>
-    </Card>
-  );
-}
-
-function CategoryBudgetItem({
-  category,
-  formatCurrency,
-  t,
-}: {
-  readonly category: CategoryOverviewItem;
-  readonly formatCurrency: (value: number) => string;
-  readonly t: (key: string) => string;
-}) {
-  const percentage = Math.round((category.spent / category.monthlyLimit) * 100);
-  const isOverBudget = percentage > 100;
-
-  return (
-    <div className="rounded-lg bg-accent/50 p-4">
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span>{category.icon}</span>
-          <span className="font-medium text-foreground">
-            {t(category.label)}
-          </span>
-        </div>
-        <span
-          className={cn(
-            "text-sm",
-            isOverBudget
-              ? "font-medium text-destructive"
-              : "text-muted-foreground",
-          )}
-        >
-          {formatCurrency(category.spent)} /{" "}
-          {formatCurrency(category.monthlyLimit)}
-        </span>
-      </div>
-      <div
-        className="overflow-hidden rounded-full bg-secondary"
-        style={{
-          // @ts-expect-error CSS variable
-          "--progress-foreground": isOverBudget
+          "--progress-foreground": usage.isOverBudget
             ? "var(--destructive)"
             : category.color,
         }}
       >
-        <Progress value={Math.min(percentage, 100)} className="h-2" />
+        <Progress value={usage.progressValue} className="h-2" />
       </div>
+      <div className="col-span-2 flex justify-between gap-3 text-xs text-muted-foreground">
+        <span>
+          {t("common.spent")}: {formatCurrency(category.spent)}
+        </span>
+        <span className={usage.isOverBudget ? "text-destructive" : ""}>
+          {usage.isOverBudget
+            ? `${formatCurrency(usage.exceededAmount)} ${t("common.overBudget")}`
+            : `${formatCurrency(usage.remainingAmount)} ${t("common.left")}`}
+        </span>
+      </div>
+      <div className="col-span-2 flex justify-end">
+        <BudgetLimitDialogButton {...props} />
+      </div>
+    </>
+  );
+}
+
+function BudgetLimitDialogButton(props: CategoryBudgetItemProps) {
+  const { category, t } = props;
+  return (
+    <NewCategoryDialog
+      purpose="budget"
+      category={{
+        group: category.group,
+        icon: category.icon,
+        id: category.id,
+        monthlyLimit: category.monthlyLimit,
+        name: category.name,
+      }}
+      createCategoryAction={props.createCategoryAction}
+      updateCategoryAction={props.updateCategoryAction}
+    >
+      <Button variant="link" size="sm" className="h-auto px-0">
+        {t("screen.budgets.configureBudget")}
+      </Button>
+    </NewCategoryDialog>
+  );
+}
+
+function CategoryBudgetItem(props: CategoryBudgetItemProps) {
+  const { category, t } = props;
+
+  return (
+    <div className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2 rounded-lg bg-accent/50 p-4">
+      <div className="flex min-w-0 items-center gap-2">
+        <span>{category.icon}</span>
+        <span className="truncate font-medium text-foreground">
+          {t(category.label)}
+        </span>
+      </div>
+      {category.monthlyLimit > 0 ? (
+        <ConfiguredCategoryBudget {...props} />
+      ) : (
+        <div className="col-span-2 flex items-center justify-between gap-3 text-sm text-muted-foreground">
+          <span>{t("category.noMonthlyLimit")}</span>
+          <BudgetLimitDialogButton {...props} />
+        </div>
+      )}
     </div>
   );
 }
 
 function CategoryBudgetsCard({
   categories,
+  createCategoryAction,
   formatCurrency,
   t,
+  updateCategoryAction,
 }: {
   readonly categories: CategoryOverviewItem[];
+  readonly createCategoryAction: (data: CreateCategoryInput) => Promise<void>;
   readonly formatCurrency: (value: number) => string;
   readonly t: (key: string) => string;
+  readonly updateCategoryAction: (data: UpdateCategoryInput) => Promise<void>;
 }) {
+  const budgetCategories = categories.filter(
+    (category) => category.group !== "income",
+  );
+
   return (
     <Card className="border-border bg-card card-shadow">
       <CardHeader>
@@ -494,24 +377,35 @@ function CategoryBudgetsCard({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {categories
-            .filter((category) => category.monthlyLimit > 0)
-            .map((category) => (
+        {budgetCategories.length ? (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {budgetCategories.map((category) => (
               <CategoryBudgetItem
                 key={category.id}
                 category={category}
+                createCategoryAction={createCategoryAction}
                 formatCurrency={formatCurrency}
                 t={t}
+                updateCategoryAction={updateCategoryAction}
               />
             ))}
-        </div>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            {t("common.noDataForPeriod")}
+          </p>
+        )}
       </CardContent>
     </Card>
   );
 }
 
-export function BudgetsScreen({ budgetData, categories }: BudgetsScreenProps) {
+export function BudgetsScreen({
+  budgetData,
+  categories,
+  createCategoryAction = unavailableCreateCategoryAction,
+  updateCategoryAction = unavailableUpdateCategoryAction,
+}: BudgetsScreenProps) {
   const { formatCurrency, t } = useI18n();
   const state = useBudgetsScreenState({ budgetData });
 
@@ -525,14 +419,12 @@ export function BudgetsScreen({ budgetData, categories }: BudgetsScreenProps) {
       <BudgetsSummaryCards {...state} formatCurrency={formatCurrency} t={t} />
       <BudgetsToolbar {...state} t={t} />
 
-      <div className="mb-6">
-        <BudgetGroupsCard {...state} formatCurrency={formatCurrency} t={t} />
-      </div>
-
       <CategoryBudgetsCard
         categories={categories}
+        createCategoryAction={createCategoryAction}
         formatCurrency={formatCurrency}
         t={t}
+        updateCategoryAction={updateCategoryAction}
       />
     </>
   );

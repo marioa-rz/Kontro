@@ -40,8 +40,10 @@ function qb(response: { data?: unknown; error?: unknown }) {
     select: chain,
     single: chain,
     update: chain,
-    then: (resolve: (value: unknown) => void, reject: (reason: unknown) => void) =>
-      Promise.resolve(response).then(resolve, reject),
+    then: (
+      resolve: (value: unknown) => void,
+      reject: (reason: unknown) => void,
+    ) => Promise.resolve(response).then(resolve, reject),
   });
   return builder;
 }
@@ -70,7 +72,10 @@ function makeSupabase(
   };
 }
 
-function setup(fromResponses: unknown[] = [], opts: { createdAt?: string | null } = {}) {
+function setup(
+  fromResponses: unknown[] = [],
+  opts: { createdAt?: string | null } = {},
+) {
   const supabase = makeSupabase(fromResponses, opts);
   vi.mocked(createClient).mockResolvedValue(supabase as never);
   return supabase;
@@ -186,6 +191,7 @@ function row(overrides: RowOverrides = {}) {
     notes: null,
     payment_method_id: null,
     payment_methods: null,
+    personal_debt_id: null,
     ...overrides,
   };
 }
@@ -230,7 +236,9 @@ describe("listTransactions", () => {
   });
 
   it("throws when the query fails with a real database error", async () => {
-    setup([qb({ data: null, error: { code: "XXPGERR", message: "db exploded" } })]);
+    setup([
+      qb({ data: null, error: { code: "XXPGERR", message: "db exploded" } }),
+    ]);
     await expect(listTransactions()).rejects.toThrow(
       "Unable to load transactions: db exploded",
     );
@@ -243,6 +251,31 @@ describe("listTransactions", () => {
     ]);
     const result = await listTransactions({ month: "2026-07" });
     expect(result.map((t) => t.id)).toEqual(["fallback-row"]);
+  });
+
+  it("falls back again when personal_debt_id is also missing", async () => {
+    setup([
+      qb({ data: null, error: { code: "42703", message: "advanced missing" } }),
+      qb({ data: null, error: { code: "42703", message: "debt missing" } }),
+      qb({ data: [row({ id: "pre-debt-migration" })], error: null }),
+    ]);
+
+    const result = await listTransactions({ month: "2026-07" });
+
+    expect(result.map((transaction) => transaction.id)).toEqual([
+      "pre-debt-migration",
+    ]);
+    expect(result[0].personalDebtId).toBeNull();
+  });
+
+  it("handles empty pre-debt fallback results", async () => {
+    setup([
+      qb({ data: null, error: { code: "42703", message: "advanced missing" } }),
+      qb({ data: null, error: { code: "42703", message: "debt missing" } }),
+      qb({ data: null, error: null }),
+    ]);
+
+    await expect(listTransactions({ month: "2026-07" })).resolves.toEqual([]);
   });
 
   it("defaults to an empty array when the fallback query succeeds with no data", async () => {
@@ -261,6 +294,17 @@ describe("listTransactions", () => {
     ]);
     await expect(listTransactions({ month: "2026-07" })).rejects.toThrow(
       "Unable to load transactions: fallback broke",
+    );
+  });
+
+  it("throws when the pre-debt fallback query fails", async () => {
+    setup([
+      qb({ data: null, error: { code: "42703", message: "advanced missing" } }),
+      qb({ data: null, error: { code: "42703", message: "debt missing" } }),
+      qb({ data: null, error: { message: "legacy failed" } }),
+    ]);
+    await expect(listTransactions({ month: "2026-07" })).rejects.toThrow(
+      "Unable to load transactions: legacy failed",
     );
   });
 
@@ -360,8 +404,16 @@ describe("listTransactions", () => {
     setup([
       qb({
         data: [
-          row({ id: "advanced-match", advanced_to_month: "2026-07", date: "2026-05-01" }),
-          row({ id: "advanced-miss", advanced_to_month: "2026-06", date: "2026-05-01" }),
+          row({
+            id: "advanced-match",
+            advanced_to_month: "2026-07",
+            date: "2026-05-01",
+          }),
+          row({
+            id: "advanced-miss",
+            advanced_to_month: "2026-06",
+            date: "2026-05-01",
+          }),
           row({ id: "date-match", date: "2026-07-20" }),
           row({ id: "date-miss", date: "2026-08-01" }),
         ],
@@ -381,7 +433,11 @@ describe("listTransactions", () => {
     setup([
       qb({
         data: [
-          row({ id: "advanced-prior", advanced_to_month: "2026-06", date: "2026-05-01" }),
+          row({
+            id: "advanced-prior",
+            advanced_to_month: "2026-06",
+            date: "2026-05-01",
+          }),
           row({ id: "date-prior", date: "2026-05-15" }),
           row({ id: "date-future", date: "2026-08-01" }),
         ],
@@ -565,7 +621,14 @@ describe("getMonthlySummary", () => {
     vi.setSystemTime(new Date("2026-07-15T12:00:00.000Z"));
     setup([
       qb({
-        data: [row({ id: "current-month", amount: 500, kind: "income", date: "2026-07-05" })],
+        data: [
+          row({
+            id: "current-month",
+            amount: 500,
+            kind: "income",
+            date: "2026-07-05",
+          }),
+        ],
         error: null,
       }),
     ]);
@@ -627,7 +690,18 @@ describe("getDashboardData", () => {
         date: "2026-07-01",
         notes: "subscription 3/12",
       }),
-      row({ id: "sub-paused", amount: 40, date: "2026-07-01", notes: "subscription paused 4/12" }),
+      row({
+        id: "sub-paused",
+        amount: 40,
+        date: "2026-07-01",
+        notes: "subscription paused 4/12",
+      }),
+      row({
+        id: "debt-payment",
+        amount: 100,
+        date: "2026-07-11",
+        personal_debt_id: "debt-1",
+      }),
     ];
     const previousDataset = [
       row({ id: "prev-inc", amount: 4000, kind: "income", date: "2026-06-05" }),
@@ -662,7 +736,18 @@ describe("getDashboardData", () => {
         payment_method_id: "pm-credit",
         payment_methods: creditCard,
       }),
-      row({ id: "trend-income", amount: 999, kind: "income", date: "2026-07-05" }),
+      row({
+        id: "trend-income",
+        amount: 999,
+        kind: "income",
+        date: "2026-07-05",
+      }),
+      row({
+        id: "trend-debt",
+        amount: 100,
+        date: "2026-07-11",
+        personal_debt_id: "debt-1",
+      }),
     ];
     const displayDataset = [
       row({
@@ -701,7 +786,9 @@ describe("getDashboardData", () => {
     ];
 
     const supabase = makeTableSupabase({
-      categories: [{ data: [needsCategory, wantsCategory, savingsCategory], error: null }],
+      categories: [
+        { data: [needsCategory, wantsCategory, savingsCategory], error: null },
+      ],
       payment_methods: [{ data: [creditCard], error: null }],
       transactions: [
         { data: actualDataset, error: null },
@@ -731,7 +818,7 @@ describe("getDashboardData", () => {
 
     expect(result.summaryData.totalIncome).toBe(5000);
     expect(result.summaryData.totalExpenses).toBe(390);
-    expect(result.summaryData.currentBalance).toBe(4310);
+    expect(result.summaryData.currentBalance).toBe(4210);
     expect(result.summaryData.predictedExpenses).toBe(470);
     expect(result.summaryData.totalSaved).toBe(5300);
     expect(result.summaryData.trends.totalIncome).toBe(25);
@@ -741,6 +828,7 @@ describe("getDashboardData", () => {
     expect(result.budgetData.needs.spent).toBe(200);
     expect(result.budgetData.wants.spent).toBe(190);
     expect(result.budgetData.savings.spent).toBe(300);
+    expect(result.periodSummaries.month.debtPayments).toBe(100);
     expect(result.budgetSplitData).toHaveLength(3);
 
     const julyBucket = result.expensesOverTime.find(
@@ -764,10 +852,12 @@ describe("getDashboardData", () => {
     expect(latestIds).toContain("future-only-1");
     expect(latestIds).toContain("future-only-2");
     expect(
-      result.latestTransactions.find((t) => t.id === "future-only-1")?.isPlanned,
+      result.latestTransactions.find((t) => t.id === "future-only-1")
+        ?.isPlanned,
     ).toBe(true);
     expect(
-      result.latestTransactions.find((t) => t.id === "future-only-2")?.isPlanned,
+      result.latestTransactions.find((t) => t.id === "future-only-2")
+        ?.isPlanned,
     ).toBe(false);
   });
 
@@ -792,7 +882,13 @@ describe("getDashboardData", () => {
     // No categories/payment methods on file falls back to the sentinel
     // "none" placeholder options.
     expect(result.categories).toEqual([
-      { group: "wants", id: "none", icon: "🏷️", label: "none", monthlyLimit: 0 },
+      {
+        group: "wants",
+        id: "none",
+        icon: "🏷️",
+        label: "none",
+        monthlyLimit: 0,
+      },
     ]);
     expect(result.paymentMethods).toEqual([
       { id: "none", label: "none", type: "cash" },
@@ -805,7 +901,9 @@ describe("getDashboardData", () => {
       payment_methods: [{ data: [], error: null }],
       transactions: [
         {
-          data: [row({ id: "inc", amount: 500, kind: "income", date: "2026-07-05" })],
+          data: [
+            row({ id: "inc", amount: 500, kind: "income", date: "2026-07-05" }),
+          ],
           error: null,
         },
         { data: [], error: null },
@@ -876,7 +974,18 @@ describe("getReportsData", () => {
         payment_methods: creditCard,
       }),
       row({ id: "jul-normal", amount: 200, date: "2026-07-10" }),
-      row({ id: "jul-income", amount: 5000, kind: "income", date: "2026-07-01" }),
+      row({
+        id: "jul-debt",
+        amount: 300,
+        date: "2026-07-11",
+        personal_debt_id: "debt-1",
+      }),
+      row({
+        id: "jul-income",
+        amount: 5000,
+        kind: "income",
+        date: "2026-07-01",
+      }),
     ];
 
     const supabase = makeTableSupabase({
@@ -893,7 +1002,10 @@ describe("getReportsData", () => {
     };
     supabase.rpc.mockImplementation(
       (_fn: string, args: { p_selected_month: string }) =>
-        Promise.resolve({ data: netWorthByMonth[args.p_selected_month] ?? 0, error: null }),
+        Promise.resolve({
+          data: netWorthByMonth[args.p_selected_month] ?? 0,
+          error: null,
+        }),
     );
     vi.mocked(createClient).mockResolvedValue(supabase as never);
 
@@ -905,6 +1017,7 @@ describe("getReportsData", () => {
     expect(result.monthlyReports[0].month).toBe("2026-07");
     expect(result.monthlyReports[0].income).toBe(5000);
     expect(result.monthlyReports[0].expenses).toBe(200);
+    expect(result.monthlyReports[0].debtPayments).toBe(300);
     expect(result.monthlyReports[0].netWorth).toBe(6540);
     expect(result.monthlyReports[0].savings).toBe(6540 - 1530);
     expect(result.monthlyReports.at(-1)?.month).toBe("2026-02");
@@ -913,7 +1026,10 @@ describe("getReportsData", () => {
     // month and old predates the whole window — both excluded.
     expect(result.transactions.map((t) => t.date)).not.toContain("2026-07-25");
     expect(result.transactions.map((t) => t.date)).not.toContain("2025-12-15");
-    expect(result.transactions).toHaveLength(6);
+    expect(result.transactions).toHaveLength(7);
+    expect(
+      result.transactions.some((item) => item.personalDebtId === "debt-1"),
+    ).toBe(true);
   });
 
   it("falls back to the current month and 6 months when no arguments are given", async () => {

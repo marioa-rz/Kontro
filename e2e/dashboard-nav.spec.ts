@@ -10,7 +10,7 @@ test.describe("dashboard", () => {
     await expect(main.getByText("Ingresos totales")).toBeVisible();
     await expect(main.getByText("Gastos totales")).toBeVisible();
     await expect(main.getByText("Total ahorrado")).toBeVisible();
-    await expect(main.getByText("Saldo disponible")).toBeVisible();
+    await expect(main.getByText("Disponible este mes")).toBeVisible();
   });
 
   test("navigates through every sidebar section", async ({ page }) => {

@@ -17,6 +17,7 @@ export interface Transaction {
   paymentMethodDueDay?: number | null;
   paymentMethodClosingDay?: number | null;
   paymentMethodType?: string | null;
+  personalDebtId?: string | null;
   isPlanned?: boolean;
   isCreditCardInvoice?: boolean;
   // Set when this individual purchase's amount is already folded into a
