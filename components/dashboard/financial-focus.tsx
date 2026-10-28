@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Landmark, TrendingUp, WalletCards } from "lucide-react";
+import { ArrowRight, Landmark, WalletCards } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -174,50 +174,6 @@ function DebtFocusCard({ data }: { data: DashboardFocusData }) {
   );
 }
 
-function IncomeFocusCard({ data }: { data: DashboardFocusData }) {
-  const { formatCurrency, t } = useI18n();
-  return (
-    <Card className="border-border bg-card card-shadow lg:col-span-2">
-      <CardHeader className="grid-cols-[auto_1fr] grid-rows-1 items-center gap-3">
-        <span className="rounded-xl bg-income/10 p-2 text-income">
-          <TrendingUp className="size-5" />
-        </span>
-        <CardTitle className="leading-snug">
-          {t("dashboard.focus.incomeTitle")}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {data.incomes.length ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {data.incomes.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between rounded-xl border border-border/70 bg-background/55 p-4"
-              >
-                <span className="flex min-w-0 items-center gap-2">
-                  <span>{item.icon}</span>
-                  <span className="truncate text-sm font-medium">
-                    {t(item.label)}
-                  </span>
-                </span>
-                <span className="ml-3 font-semibold text-income">
-                  {formatCurrency(item.amount)}
-                </span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <EmptyState
-            message={t("dashboard.focus.incomeEmpty")}
-            href="/categories"
-            action={t("dashboard.focus.configureIncome")}
-          />
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
 export function FinancialFocus({
   data,
 }: {
@@ -227,7 +183,6 @@ export function FinancialFocus({
     <div className="mt-4 grid grid-cols-1 gap-4 lg:mt-6 lg:grid-cols-2 lg:gap-6">
       <BudgetFocusCard data={data} />
       <DebtFocusCard data={data} />
-      <IncomeFocusCard data={data} />
     </div>
   );
 }

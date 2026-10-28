@@ -172,6 +172,7 @@ describe("createCategoryAction / updateCategoryAction / deleteCategoryAction", (
     expect(updateCategory).toHaveBeenCalledWith(
       expect.objectContaining({ id: uuid, name: "Fun" }),
     );
+    expect(revalidatePath).toHaveBeenCalledWith("/budgets");
   });
 
   it("deletes a category", async () => {

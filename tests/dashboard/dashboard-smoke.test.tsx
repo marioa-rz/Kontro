@@ -24,6 +24,10 @@ import { PlaceholderPage } from "@/components/dashboard/placeholder-page";
 import { SummaryCards } from "@/components/dashboard/summary-cards";
 import { AnimatedCard } from "@/components/ui/animated-card";
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn() }),
+}));
+
 const translations: Record<string, string> = {
   "common.expense": "Expense",
   "common.income": "Income",

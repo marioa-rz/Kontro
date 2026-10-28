@@ -1,5 +1,9 @@
 import { AppShell } from "@/components/dashboard/app-shell";
 import { BudgetsScreen } from "@/components/dashboard/budgets-screen";
+import {
+  createCategoryAction,
+  updateCategoryAction,
+} from "@/app/transactions/actions";
 import { getBudgetOverviewData } from "@/lib/finance/transactions";
 
 type BudgetsPageProps = {
@@ -20,6 +24,8 @@ export default async function BudgetsPage({ searchParams }: BudgetsPageProps) {
       <BudgetsScreen
         budgetData={budgetOverviewData.budgetData}
         categories={budgetOverviewData.categories}
+        createCategoryAction={createCategoryAction}
+        updateCategoryAction={updateCategoryAction}
       />
     </AppShell>
   );

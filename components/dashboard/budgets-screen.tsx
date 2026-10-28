@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 
-import Link from "next/link";
 import { Download } from "lucide-react";
 
+import { NewCategoryDialog } from "@/components/dashboard/new-category-dialog";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +14,8 @@ import { Switch } from "@/components/ui/switch";
 import {
   type BudgetData,
   type CategoryOverviewItem,
+  type CreateCategoryInput,
+  type UpdateCategoryInput,
 } from "@/lib/finance/transactions";
 import { calculateBudgetUsage } from "@/lib/finance/budget";
 import { useI18n } from "@/lib/i18n";
@@ -22,6 +24,16 @@ import { cn } from "@/lib/utils";
 type BudgetsScreenProps = {
   readonly budgetData: BudgetData;
   readonly categories: CategoryOverviewItem[];
+  readonly createCategoryAction?: (data: CreateCategoryInput) => Promise<void>;
+  readonly updateCategoryAction?: (data: UpdateCategoryInput) => Promise<void>;
+};
+
+const unavailableCreateCategoryAction = async () => {
+  throw new Error("Category creation is unavailable on this screen.");
+};
+
+const unavailableUpdateCategoryAction = async () => {
+  throw new Error("Budget updates are unavailable on this screen.");
 };
 
 export function csvEscape(value: string | number | null) {
@@ -244,15 +256,14 @@ function BudgetsToolbar({
 
 type CategoryBudgetItemProps = {
   readonly category: CategoryOverviewItem;
+  readonly createCategoryAction: (data: CreateCategoryInput) => Promise<void>;
   readonly formatCurrency: (value: number) => string;
   readonly t: (key: string) => string;
+  readonly updateCategoryAction: (data: UpdateCategoryInput) => Promise<void>;
 };
 
-function ConfiguredCategoryBudget({
-  category,
-  formatCurrency,
-  t,
-}: CategoryBudgetItemProps) {
+function ConfiguredCategoryBudget(props: CategoryBudgetItemProps) {
+  const { category, formatCurrency, t } = props;
   const usage = calculateBudgetUsage(category.spent, category.monthlyLimit);
 
   return (
@@ -289,7 +300,32 @@ function ConfiguredCategoryBudget({
             : `${formatCurrency(usage.remainingAmount)} ${t("common.left")}`}
         </span>
       </div>
+      <div className="col-span-2 flex justify-end">
+        <BudgetLimitDialogButton {...props} />
+      </div>
     </>
+  );
+}
+
+function BudgetLimitDialogButton(props: CategoryBudgetItemProps) {
+  const { category, t } = props;
+  return (
+    <NewCategoryDialog
+      purpose="budget"
+      category={{
+        group: category.group,
+        icon: category.icon,
+        id: category.id,
+        monthlyLimit: category.monthlyLimit,
+        name: category.name,
+      }}
+      createCategoryAction={props.createCategoryAction}
+      updateCategoryAction={props.updateCategoryAction}
+    >
+      <Button variant="link" size="sm" className="h-auto px-0">
+        {t("screen.budgets.configureBudget")}
+      </Button>
+    </NewCategoryDialog>
   );
 }
 
@@ -309,11 +345,7 @@ function CategoryBudgetItem(props: CategoryBudgetItemProps) {
       ) : (
         <div className="col-span-2 flex items-center justify-between gap-3 text-sm text-muted-foreground">
           <span>{t("category.noMonthlyLimit")}</span>
-          <Button asChild variant="link" size="sm" className="h-auto px-0">
-            <Link href="/categories">
-              {t("screen.budgets.configureBudget")}
-            </Link>
-          </Button>
+          <BudgetLimitDialogButton {...props} />
         </div>
       )}
     </div>
@@ -322,12 +354,16 @@ function CategoryBudgetItem(props: CategoryBudgetItemProps) {
 
 function CategoryBudgetsCard({
   categories,
+  createCategoryAction,
   formatCurrency,
   t,
+  updateCategoryAction,
 }: {
   readonly categories: CategoryOverviewItem[];
+  readonly createCategoryAction: (data: CreateCategoryInput) => Promise<void>;
   readonly formatCurrency: (value: number) => string;
   readonly t: (key: string) => string;
+  readonly updateCategoryAction: (data: UpdateCategoryInput) => Promise<void>;
 }) {
   const budgetCategories = categories.filter(
     (category) => category.group !== "income",
@@ -347,8 +383,10 @@ function CategoryBudgetsCard({
               <CategoryBudgetItem
                 key={category.id}
                 category={category}
+                createCategoryAction={createCategoryAction}
                 formatCurrency={formatCurrency}
                 t={t}
+                updateCategoryAction={updateCategoryAction}
               />
             ))}
           </div>
@@ -362,7 +400,12 @@ function CategoryBudgetsCard({
   );
 }
 
-export function BudgetsScreen({ budgetData, categories }: BudgetsScreenProps) {
+export function BudgetsScreen({
+  budgetData,
+  categories,
+  createCategoryAction = unavailableCreateCategoryAction,
+  updateCategoryAction = unavailableUpdateCategoryAction,
+}: BudgetsScreenProps) {
   const { formatCurrency, t } = useI18n();
   const state = useBudgetsScreenState({ budgetData });
 
@@ -378,8 +421,10 @@ export function BudgetsScreen({ budgetData, categories }: BudgetsScreenProps) {
 
       <CategoryBudgetsCard
         categories={categories}
+        createCategoryAction={createCategoryAction}
         formatCurrency={formatCurrency}
         t={t}
+        updateCategoryAction={updateCategoryAction}
       />
     </>
   );

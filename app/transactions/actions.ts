@@ -185,6 +185,7 @@ export async function createCategoryAction(data: CreateCategoryInput) {
 
   await createCategory(parsed);
 
+  revalidatePath("/budgets");
   revalidatePath("/categories");
   revalidatePath("/dashboard");
   revalidatePath("/transactions");
@@ -196,6 +197,7 @@ export async function updateCategoryAction(data: UpdateCategoryInput) {
 
   await updateCategory(parsed);
 
+  revalidatePath("/budgets");
   revalidatePath("/categories");
   revalidatePath("/dashboard");
   revalidatePath("/transactions");
@@ -207,6 +209,7 @@ export async function deleteCategoryAction(categoryId: string) {
 
   await deleteCategory(parsedCategoryId);
 
+  revalidatePath("/budgets");
   revalidatePath("/categories");
   revalidatePath("/dashboard");
   revalidatePath("/transactions");
