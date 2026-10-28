@@ -660,6 +660,12 @@ describe("getDashboardData", () => {
         date: "2026-07-01",
         notes: "subscription paused 4/12",
       }),
+      row({
+        id: "debt-payment",
+        amount: 100,
+        date: "2026-07-11",
+        personal_debt_id: "debt-1",
+      }),
     ];
     const previousDataset = [
       row({ id: "prev-inc", amount: 4000, kind: "income", date: "2026-06-05" }),
@@ -699,6 +705,12 @@ describe("getDashboardData", () => {
         amount: 999,
         kind: "income",
         date: "2026-07-05",
+      }),
+      row({
+        id: "trend-debt",
+        amount: 100,
+        date: "2026-07-11",
+        personal_debt_id: "debt-1",
       }),
     ];
     const displayDataset = [
@@ -770,7 +782,7 @@ describe("getDashboardData", () => {
 
     expect(result.summaryData.totalIncome).toBe(5000);
     expect(result.summaryData.totalExpenses).toBe(390);
-    expect(result.summaryData.currentBalance).toBe(4310);
+    expect(result.summaryData.currentBalance).toBe(4210);
     expect(result.summaryData.predictedExpenses).toBe(470);
     expect(result.summaryData.totalSaved).toBe(5300);
     expect(result.summaryData.trends.totalIncome).toBe(25);
@@ -780,6 +792,7 @@ describe("getDashboardData", () => {
     expect(result.budgetData.needs.spent).toBe(200);
     expect(result.budgetData.wants.spent).toBe(190);
     expect(result.budgetData.savings.spent).toBe(300);
+    expect(result.periodSummaries.month.debtPayments).toBe(100);
     expect(result.budgetSplitData).toHaveLength(3);
 
     const julyBucket = result.expensesOverTime.find(

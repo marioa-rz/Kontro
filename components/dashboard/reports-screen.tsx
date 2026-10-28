@@ -183,6 +183,49 @@ function downloadTransactionsCsv(
   URL.revokeObjectURL(url);
 }
 
+type PdfReportFormatters = {
+  formatCurrency: (value: number) => string;
+  formatDate: (value: string) => string;
+  t: (key: string) => string;
+};
+
+function buildExpenseLines(
+  reportsData: ReportsData,
+  { formatCurrency, formatDate, t }: PdfReportFormatters,
+) {
+  return reportsData.transactions
+    .filter(
+      (transaction) =>
+        transaction.type === "expense" && !transaction.personalDebtId,
+    )
+    .map((transaction) =>
+      [
+        formatDate(transaction.date),
+        transaction.financialMonth,
+        t(transaction.description),
+        t(transaction.category),
+        transaction.paymentMethod ? t(transaction.paymentMethod) : "-",
+        formatCurrency(transaction.amount),
+      ].join(" | "),
+    );
+}
+
+function buildDebtLines(
+  reportsData: ReportsData,
+  { formatCurrency, formatDate, t }: PdfReportFormatters,
+) {
+  return reportsData.transactions
+    .filter((transaction) => transaction.personalDebtId)
+    .map((transaction) =>
+      [
+        formatDate(transaction.date),
+        transaction.financialMonth,
+        t(transaction.description),
+        formatCurrency(transaction.amount),
+      ].join(" | "),
+    );
+}
+
 function buildPdfReportText({
   reportsData,
   monthlyReports,
@@ -196,18 +239,9 @@ function buildPdfReportText({
   formatDate: (value: string) => string;
   t: (key: string) => string;
 }) {
-  const expenseLines = reportsData.transactions
-    .filter((transaction) => transaction.type === "expense")
-    .map((transaction) =>
-      [
-        formatDate(transaction.date),
-        transaction.financialMonth,
-        t(transaction.description),
-        t(transaction.category),
-        transaction.paymentMethod ? t(transaction.paymentMethod) : "-",
-        formatCurrency(transaction.amount),
-      ].join(" | "),
-    );
+  const formatters = { formatCurrency, formatDate, t };
+  const expenseLines = buildExpenseLines(reportsData, formatters);
+  const debtLines = buildDebtLines(reportsData, formatters);
   const summaryLines = monthlyReports.map((report) =>
     [
       `${t(report.monthKey)} ${report.year}`,
@@ -227,6 +261,9 @@ function buildPdfReportText({
     "",
     t("screen.reports.allExpenses"),
     ...(expenseLines.length ? expenseLines : [t("screen.reports.noExpenses")]),
+    "",
+    t("screen.reports.debtPayments"),
+    ...(debtLines.length ? debtLines : [t("screen.reports.noDebtPayments")]),
   ].join("\n");
 }
 

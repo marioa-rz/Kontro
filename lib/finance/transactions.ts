@@ -2510,28 +2510,26 @@ function resolveGoalInput(
   const name = assertNonEmptyString(input.name, "Goal name");
   const icon = assertNonEmptyString(input.icon, "Goal icon", 32);
   const targetAmount = Number(input.targetAmount);
-  const currentAmount = Number(input.currentAmount ?? 0);
   const deadline = toIsoDate(input.deadline);
 
   assertPositiveFiniteAmount(targetAmount, "Target amount");
-  if (!Number.isFinite(currentAmount) || currentAmount < 0) {
-    throw new Error("Current amount is invalid.");
-  }
   assertValidIsoDate(deadline);
   assertDateNotBeforeUserCreated(deadline, createdAt);
   assertValidColor(input.color);
 
-  return { name, icon, targetAmount, currentAmount, deadline };
+  return { name, icon, targetAmount, deadline };
 }
 
 export async function createGoal(input: CreateGoalInput) {
   const { createdAt, supabase, userId } = await getUserContext();
-  const { name, icon, targetAmount, currentAmount, deadline } =
-    resolveGoalInput(input, createdAt);
+  const { name, icon, targetAmount, deadline } = resolveGoalInput(
+    input,
+    createdAt,
+  );
 
   const { error } = await supabase.from("goals").insert({
     color: input.color,
-    current_amount: Math.min(currentAmount, targetAmount),
+    current_amount: 0,
     deadline,
     icon,
     name,
@@ -2547,14 +2545,15 @@ export async function createGoal(input: CreateGoalInput) {
 export async function updateGoal(input: UpdateGoalInput) {
   assertUuid(input.id, "Goal");
   const { createdAt, supabase, userId } = await getUserContext();
-  const { name, icon, targetAmount, currentAmount, deadline } =
-    resolveGoalInput(input, createdAt);
+  const { name, icon, targetAmount, deadline } = resolveGoalInput(
+    input,
+    createdAt,
+  );
 
   const { error } = await supabase
     .from("goals")
     .update({
       color: input.color,
-      current_amount: Math.min(currentAmount, targetAmount),
       deadline,
       icon,
       name,
@@ -3546,6 +3545,10 @@ async function fetchDashboardSourceData(
   };
 }
 
+function isConsumptionExpense(transaction: Transaction) {
+  return transaction.type === "expense" && !transaction.personalDebtId;
+}
+
 function buildDashboardSummaryData({
   transactions,
   previousTransactions,
@@ -3560,14 +3563,18 @@ function buildDashboardSummaryData({
   previousTotalSaved: number;
 }) {
   const totalIncome = sumTransactionsByType(transactions, "income");
-  const totalExpenses = sumTransactionsByType(transactions, "expense");
+  const expenseTransactions = transactions.filter(isConsumptionExpense);
+  const debtPayments = transactions
+    .filter((transaction) => transaction.personalDebtId)
+    .reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0);
+  const totalExpenses = sumTransactionsByType(expenseTransactions, "expense");
   const totalMonthSavings = sumTransactionsByType(transactions, "saving");
   const previousTotalIncome = sumTransactionsByType(
     previousTransactions,
     "income",
   );
   const previousTotalExpenses = sumTransactionsByType(
-    previousTransactions,
+    previousTransactions.filter(isConsumptionExpense),
     "expense",
   );
   const predictedExpenses = scheduledExpenseTransactions.reduce(
@@ -3576,7 +3583,8 @@ function buildDashboardSummaryData({
   );
 
   return {
-    currentBalance: totalIncome - totalExpenses - totalMonthSavings,
+    currentBalance:
+      totalIncome - totalExpenses - totalMonthSavings - debtPayments,
     predictedExpenses,
     totalExpenses,
     totalIncome,
@@ -3624,19 +3632,25 @@ function buildDashboardBudgetContext(
   scheduledTransactions: Transaction[],
   trendTransactions: Transaction[],
 ) {
-  const trendExpenseTransactions = trendTransactions.filter(
-    (transaction) => transaction.type === "expense",
+  const actualBudgetTransactions = transactions.filter(
+    (transaction) => !transaction.personalDebtId,
   );
-  const scheduledExpenseTransactions = scheduledTransactions.filter(
-    (transaction) => transaction.type === "expense",
-  );
+  const trendExpenseTransactions =
+    trendTransactions.filter(isConsumptionExpense);
+  const scheduledExpenseTransactions =
+    scheduledTransactions.filter(isConsumptionExpense);
   const budgetData = calculateBudgetData(
     sumTransactionsByType(transactions, "income"),
-    sumBudgetUsageByGroup(transactions),
+    sumBudgetUsageByGroup(actualBudgetTransactions),
     sumBudgetUsageByGroup(scheduledTransactions),
   );
 
-  return { trendExpenseTransactions, scheduledExpenseTransactions, budgetData };
+  return {
+    actualBudgetTransactions,
+    budgetData,
+    scheduledExpenseTransactions,
+    trendExpenseTransactions,
+  };
 }
 
 function buildDashboardBudgetSplitData(
@@ -3673,17 +3687,19 @@ function buildDashboardBudgetSplitData(
   ];
 }
 
+type AssembleDashboardDataInput = {
+  monthBuckets: ReturnType<typeof getLastSixMonthKeys>;
+  sourceData: Awaited<ReturnType<typeof fetchDashboardSourceData>>;
+  budgetContext: ReturnType<typeof buildDashboardBudgetContext>;
+  summaryEndDate: string;
+};
+
 function assembleDashboardData({
   monthBuckets,
   sourceData,
   budgetContext,
   summaryEndDate,
-}: {
-  monthBuckets: ReturnType<typeof getLastSixMonthKeys>;
-  sourceData: Awaited<ReturnType<typeof fetchDashboardSourceData>>;
-  budgetContext: ReturnType<typeof buildDashboardBudgetContext>;
-  summaryEndDate: string;
-}): DashboardData {
+}: AssembleDashboardDataInput): DashboardData {
   const {
     transactions,
     previousTransactions,
@@ -3701,7 +3717,9 @@ function assembleDashboardData({
     budgetData,
     budgetSplitData: buildDashboardBudgetSplitData(budgetData),
     categories,
-    dailyExpensesOverTime: buildDailyExpensesOverTime(transactions),
+    dailyExpensesOverTime: buildDailyExpensesOverTime(
+      budgetContext.actualBudgetTransactions,
+    ),
     expensesByCategory: buildExpensesByCategoryData(scheduledTransactions),
     expensesOverTime: buildExpensesOverTimeData(
       monthBuckets,
@@ -3713,7 +3731,10 @@ function assembleDashboardData({
       displayScheduledTransactions,
       getTodayValue(),
     ),
-    periodSummaries: buildPeriodSummaries(transactions, summaryEndDate),
+    periodSummaries: buildPeriodSummaries(
+      sourceData.trendTransactions,
+      summaryEndDate,
+    ),
     paymentMethods,
     summaryData: buildDashboardSummaryData({
       transactions,

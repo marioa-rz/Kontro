@@ -338,6 +338,8 @@ const messages = {
     "goals.emptyDescription":
       "Create a goal to track progress toward an emergency fund, trip, purchase, or investment.",
     "goals.emptyTitle": "No goals yet",
+    "goals.fundingHint":
+      "Create the goal at zero, then record each contribution so savings and progress stay synchronized.",
     "goals.formDescription":
       "Set a target, deadline, icon, and starting balance.",
     "goals.fundError": "Failed to add funds.",
@@ -573,6 +575,7 @@ const messages = {
     "payments.type.pix": "PIX",
     "screen.reports.breakdown": "Monthly Breakdown",
     "screen.reports.debtPayments": "Debt payments",
+    "screen.reports.noDebtPayments": "No debt payments in this period.",
     "screen.reports.allExpenses": "All expenses",
     "screen.reports.description": "Analyze your financial performance",
     "screen.reports.export": "Export",
@@ -1068,6 +1071,8 @@ const messages = {
     "goals.emptyDescription":
       "Crie uma meta para acompanhar sua reserva, viagem, compra ou investimento.",
     "goals.emptyTitle": "Nenhuma meta ainda",
+    "goals.fundingHint":
+      "Crie a meta em zero e registre cada aporte para manter economia e progresso sincronizados.",
     "goals.formDescription": "Defina alvo, prazo, ícone e saldo inicial.",
     "goals.fundError": "Não foi possível adicionar valor.",
     "goals.fundSuccess": "Valor adicionado com sucesso.",
@@ -1314,6 +1319,8 @@ const messages = {
     "payments.type.pix": "PIX",
     "screen.reports.breakdown": "Detalhamento mensal",
     "screen.reports.debtPayments": "Pagamentos de dívidas",
+    "screen.reports.noDebtPayments":
+      "Nenhum pagamento de dívida neste período.",
     "screen.reports.allExpenses": "Todos os gastos",
     "screen.reports.description": "Analise seu desempenho financeiro",
     "screen.reports.export": "Exportar",
@@ -1915,6 +1922,8 @@ const remainingSpanishMessages = {
   "goals.emptyDescription":
     "Crea una meta para seguir tu avance hacia un fondo de emergencia, viaje, compra o inversión.",
   "goals.emptyTitle": "Aún no hay metas",
+  "goals.fundingHint":
+    "Crea la meta en cero y registra cada aporte para mantener el ahorro y el avance sincronizados.",
   "goals.formDescription":
     "Define un objetivo, fecha límite, ícono y saldo inicial.",
   "goals.fundError": "No se pudieron agregar fondos.",
@@ -2119,6 +2128,7 @@ const remainingSpanishMessages = {
   "payments.type.pix": "PIX",
   "screen.reports.breakdown": "Desglose mensual",
   "screen.reports.debtPayments": "Pagos de deudas",
+  "screen.reports.noDebtPayments": "No hay pagos de deudas en este periodo.",
   "screen.reports.allExpenses": "Todos los gastos",
   "screen.reports.description": "Analiza tu desempeño financiero",
   "screen.reports.export": "Exportar",

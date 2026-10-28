@@ -33,6 +33,38 @@ create index if not exists transactions_user_personal_debt_date_idx
   on public.transactions (user_id, personal_debt_id, date desc)
   where personal_debt_id is not null;
 
+create or replace function private.validate_transaction_owner_refs()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.category_id is not null and not exists (
+    select 1 from public.categories where id = new.category_id and user_id = new.user_id
+  ) then raise exception 'invalid category for transaction owner'; end if;
+
+  if new.payment_method_id is not null and not exists (
+    select 1 from public.payment_methods where id = new.payment_method_id and user_id = new.user_id
+  ) then raise exception 'invalid payment method for transaction owner'; end if;
+
+  if new.goal_id is not null and not exists (
+    select 1 from public.goals where id = new.goal_id and user_id = new.user_id
+  ) then raise exception 'invalid goal for transaction owner'; end if;
+
+  if new.personal_debt_id is not null and not exists (
+    select 1 from public.personal_debts where id = new.personal_debt_id and user_id = new.user_id
+  ) then raise exception 'invalid personal debt for transaction owner'; end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists transactions_validate_owner_refs on public.transactions;
+create trigger transactions_validate_owner_refs
+before insert or update of user_id, category_id, payment_method_id, goal_id, personal_debt_id
+on public.transactions
+for each row execute function private.validate_transaction_owner_refs();
+
 alter table public.personal_debts enable row level security;
 alter table public.personal_debts force row level security;
 alter table public.personal_debt_payments enable row level security;
@@ -66,7 +98,7 @@ create or replace function public.record_personal_debt_payment(
 )
 returns numeric
 language plpgsql
-security invoker
+security definer
 set search_path = public
 as $$
 declare
@@ -119,4 +151,5 @@ grant execute on function public.record_personal_debt_payment(uuid, uuid, numeri
 
 revoke all on public.personal_debts, public.personal_debt_payments from anon;
 grant select, insert, update, delete on public.personal_debts to authenticated;
-grant select, insert, update, delete on public.personal_debt_payments to authenticated;
+revoke insert, update, delete on public.personal_debt_payments from authenticated;
+grant select on public.personal_debt_payments to authenticated;

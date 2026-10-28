@@ -144,6 +144,9 @@ The current UI calculates 50/30/20 budget data from transactions and category li
 - `deleted_at`
 
 `lib/finance/transactions.ts` calls `record_goal_contribution` when adding funds. The RPC locks the goal, caps the amount to the remaining target, inserts the linked saving transaction, and updates the goal atomically.
+Goals are created with zero progress, and editing goal metadata never changes progress. All progress changes therefore go through the contribution RPC and remain linked to the savings ledger.
+
+Personal debt repayments are written only through `record_personal_debt_payment`. Authenticated clients have read-only access to repayment rows; the security-definer RPC caps the amount and creates the linked expense transaction in the same database operation. The transaction owner trigger validates category, payment method, goal, and personal-debt references against `transactions.user_id`.
 
 ## Privacy request fields in the schema
 

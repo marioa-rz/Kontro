@@ -51,4 +51,14 @@ describe("buildPeriodSummaries", () => {
     });
     expect(result.month).toMatchObject({ available: 500, expenses: 150 });
   });
+
+  it("includes the previous calendar month in a seven-day window", () => {
+    const result = buildPeriodSummaries(
+      [transaction("2026-06-30", "expense", 75)],
+      "2026-07-02",
+    );
+
+    expect(result.week.expenses).toBe(75);
+    expect(result.month.expenses).toBe(0);
+  });
 });
