@@ -268,6 +268,16 @@ describe("listTransactions", () => {
     expect(result[0].personalDebtId).toBeNull();
   });
 
+  it("handles empty pre-debt fallback results", async () => {
+    setup([
+      qb({ data: null, error: { code: "42703", message: "advanced missing" } }),
+      qb({ data: null, error: { code: "42703", message: "debt missing" } }),
+      qb({ data: null, error: null }),
+    ]);
+
+    await expect(listTransactions({ month: "2026-07" })).resolves.toEqual([]);
+  });
+
   it("defaults to an empty array when the fallback query succeeds with no data", async () => {
     setup([
       qb({ data: null, error: { code: "42703", message: "col missing" } }),
@@ -284,6 +294,17 @@ describe("listTransactions", () => {
     ]);
     await expect(listTransactions({ month: "2026-07" })).rejects.toThrow(
       "Unable to load transactions: fallback broke",
+    );
+  });
+
+  it("throws when the pre-debt fallback query fails", async () => {
+    setup([
+      qb({ data: null, error: { code: "42703", message: "advanced missing" } }),
+      qb({ data: null, error: { code: "42703", message: "debt missing" } }),
+      qb({ data: null, error: { message: "legacy failed" } }),
+    ]);
+    await expect(listTransactions({ month: "2026-07" })).rejects.toThrow(
+      "Unable to load transactions: legacy failed",
     );
   });
 

@@ -1031,6 +1031,15 @@ describe("updateGoal", () => {
     );
   });
 
+  it("reports goal lookup failures and missing goals", async () => {
+    setup([qb({ data: null, error: { message: "lookup failed" } })]);
+    await expect(updateGoal(validInput)).rejects.toThrow(
+      "Unable to load goal: lookup failed",
+    );
+    setup([qb({ data: null, error: null })]);
+    await expect(updateGoal(validInput)).rejects.toThrow("Goal not found.");
+  });
+
   it("rejects a target below contribution-backed progress", async () => {
     setup([qb({ data: { current_amount: 1200 }, error: null })]);
     await expect(updateGoal(validInput)).rejects.toThrow(
@@ -1069,6 +1078,14 @@ describe("addGoalFunds", () => {
     const supabase = setup([]);
     supabase.rpc.mockResolvedValue({ data: null, error: null });
     await expect(addGoalFunds(GOAL_ID, 10)).rejects.toThrow("Goal not found.");
+  });
+
+  it("throws when the goal is already complete", async () => {
+    const supabase = setup([]);
+    supabase.rpc.mockResolvedValue({ data: 0, error: null });
+    await expect(addGoalFunds(GOAL_ID, 10)).rejects.toThrow(
+      "Goal is already complete.",
+    );
   });
 
   it("adds funds on success", async () => {

@@ -10,7 +10,6 @@ test("configures a category budget and sees it reflected on the Budgets page", a
 
   const dialog = page.getByRole("dialog");
   await dialog.locator("#category-name").fill(categoryName);
-  await dialog.locator("#category-limit").pressSequentially("30000");
   await dialog.getByRole("button", { name: "Crear categoría" }).click();
 
   await expect(page.getByText("Categoría creada correctamente.")).toBeVisible();
@@ -26,5 +25,23 @@ test("configures a category budget and sees it reflected on the Budgets page", a
   await expect(
     page.getByRole("main").getByText("Presupuestos por categoría"),
   ).toBeVisible();
-  await expect(page.getByText(categoryName, { exact: true })).toBeVisible();
+
+  const categoryBudget = page
+    .getByText(categoryName, { exact: true })
+    .locator("../..");
+  await expect(categoryBudget).toBeVisible();
+  await categoryBudget
+    .getByRole("button", { name: "Configurar presupuesto" })
+    .click();
+
+  const budgetDialog = page.getByRole("dialog");
+  await budgetDialog.locator("#category-limit").fill("30000");
+  await budgetDialog
+    .getByRole("button", { name: "Guardar presupuesto" })
+    .click();
+
+  await expect(page.getByText("Categoría actualizada correctamente.")).toBeVisible();
+  await expect(
+    categoryBudget.getByText(/^Q\s*0\.00\s*\/\s*Q\s*300\.00$/),
+  ).toBeVisible();
 });
