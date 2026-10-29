@@ -41,6 +41,8 @@ const translations: Record<string, string> = {
   "category.expenseType": "Expense type",
   "category.expenseTypeEssential": "Essential expense",
   "category.expenseTypePersonal": "Personal expense",
+  "category.isService": "Service to pay",
+  "category.isServiceDescription": "Show movements as bills due",
   "screen.categories.editCategory": "Edit category",
   "screen.categories.newCategory": "New category",
   "category.editDescription": "Edit an existing category",
@@ -146,6 +148,7 @@ describe("NewCategoryDialog", () => {
     expect(createCategoryAction).toHaveBeenCalledWith({
       group: "needs",
       icon: "🏷️",
+      isService: false,
       monthlyLimit: 0,
       name: "Groceries",
     });
@@ -199,9 +202,38 @@ describe("NewCategoryDialog", () => {
         monthlyLimit: 150,
         name: "Leisure",
         id: "cat-1",
+        isService: false,
       });
     });
     expect(toast.success).toHaveBeenCalledWith("Category updated");
+  });
+
+  it("marks an expense category as a service to pay", async () => {
+    const createCategoryAction = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <NewCategoryDialog
+        open
+        createCategoryAction={createCategoryAction}
+        onOpenChange={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByPlaceholderText("e.g. Groceries"), {
+      target: { value: "Internet" },
+    });
+    fireEvent.click(screen.getByRole("switch", { name: "Service to pay" }));
+    fireEvent.click(screen.getByText("Create"));
+
+    await vi.waitFor(() => {
+      expect(createCategoryAction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          group: "needs",
+          isService: true,
+          name: "Internet",
+        }),
+      );
+    });
   });
 
   it("starts with an empty name field when category.showName is false, even though category.name is set", () => {
@@ -291,6 +323,7 @@ describe("NewCategoryDialog", () => {
         monthlyLimit: 200,
         name: "Investments",
         id: "cat-3",
+        isService: false,
       });
     });
   });
@@ -328,6 +361,7 @@ describe("NewCategoryDialog", () => {
         monthlyLimit: 0,
         name: "Housing",
         id: "cat-5",
+        isService: false,
       });
     });
   });

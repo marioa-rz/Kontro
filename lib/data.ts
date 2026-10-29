@@ -19,6 +19,7 @@ export interface Transaction {
   paymentMethodType?: string | null;
   personalDebtId?: string | null;
   isPlanned?: boolean;
+  isService?: boolean;
   isCreditCardInvoice?: boolean;
   // Set when this individual purchase's amount is already folded into a
   // sibling isCreditCardInvoice transaction's total (preserveCreditCardInvoicePurchases),

@@ -654,7 +654,6 @@ const editablePaymentTypeOptions: UpdatePaymentMethodInput["type"][] = [
 ];
 const creatablePaymentTypeOptions: CreatePaymentMethodInput["type"][] = [
   "bank",
-  "boleto",
   "credit",
   "debit",
   "other",

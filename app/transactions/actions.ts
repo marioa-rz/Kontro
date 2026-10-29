@@ -71,6 +71,7 @@ const createCategoryActionSchema = z
   .object({
     group: z.enum(["needs", "wants", "savings", "income"]),
     icon: z.string().trim().max(32),
+    isService: z.boolean().optional(),
     monthlyLimit: z.number().finite().min(0).max(1_000_000_000).optional(),
     name: safeShortTextSchema,
   })
@@ -124,7 +125,7 @@ const updatePaymentMethodActionSchema = z
 
 const createPaymentMethodActionSchema = updatePaymentMethodActionSchema
   .omit({ id: true, type: true })
-  .extend({ type: z.enum(["bank", "boleto", "credit", "debit", "other"]) })
+  .extend({ type: z.enum(["bank", "credit", "debit", "other"]) })
   .strict();
 
 const createInvoiceAdvancePaymentActionSchema = z
@@ -188,6 +189,7 @@ export async function createCategoryAction(data: CreateCategoryInput) {
   revalidatePath("/budgets");
   revalidatePath("/categories");
   revalidatePath("/dashboard");
+  revalidatePath("/payments");
   revalidatePath("/transactions");
   revalidatePath("/transactions/new");
 }
@@ -200,6 +202,7 @@ export async function updateCategoryAction(data: UpdateCategoryInput) {
   revalidatePath("/budgets");
   revalidatePath("/categories");
   revalidatePath("/dashboard");
+  revalidatePath("/payments");
   revalidatePath("/transactions");
   revalidatePath("/transactions/new");
 }
@@ -212,6 +215,7 @@ export async function deleteCategoryAction(categoryId: string) {
   revalidatePath("/budgets");
   revalidatePath("/categories");
   revalidatePath("/dashboard");
+  revalidatePath("/payments");
   revalidatePath("/transactions");
   revalidatePath("/transactions/new");
 }

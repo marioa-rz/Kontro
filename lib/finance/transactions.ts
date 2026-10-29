@@ -93,6 +93,7 @@ type CategoryRow = {
   id: string;
   group_type: TransactionGroup;
   is_default: boolean | null;
+  is_service?: boolean | null;
   monthly_limit: number | string | null;
   name: string;
 };
@@ -191,6 +192,7 @@ export type TransactionFormOptions = {
 export type CreateCategoryInput = {
   group: DbCategoryGroup;
   icon: string;
+  isService?: boolean;
   monthlyLimit?: number;
   name: string;
 };
@@ -227,7 +229,10 @@ export type CreatePaymentMethodInput = {
   creditLimit?: number;
   dueDay?: number | null;
   name: string;
-  type: Exclude<UpdatePaymentMethodInput["type"], "cash" | "pix">;
+  type: Exclude<
+    UpdatePaymentMethodInput["type"],
+    "boleto" | "cash" | "pix"
+  >;
 };
 
 export type CreateInvoiceAdvancePaymentInput = {
@@ -318,6 +323,7 @@ export type CategoryOverviewItem = {
   icon: string;
   id: string;
   isDefault: boolean;
+  isService: boolean;
   label: string;
   monthlyLimit: number;
   name: string;
@@ -449,7 +455,6 @@ const editablePaymentMethodTypes = [
 ] as const;
 const creatablePaymentMethodTypes = [
   "bank",
-  "boleto",
   "credit",
   "debit",
   "other",
@@ -508,6 +513,7 @@ const transactionSelect = `
     icon,
     group_type,
     is_default,
+    is_service,
     monthly_limit
   ),
   payment_methods (
@@ -538,6 +544,7 @@ const transactionSelectWithoutAdvancedMetadata = `
     icon,
     group_type,
     is_default,
+    is_service,
     monthly_limit
   ),
   payment_methods (
@@ -567,6 +574,7 @@ const transactionSelectBeforeDebtMetadata = `
     icon,
     group_type,
     is_default,
+    is_service,
     monthly_limit
   ),
   payment_methods (
@@ -1102,6 +1110,7 @@ function toTransaction(row: TransactionRow): Transaction {
     installmentGroupId: row.installment_group_id ?? null,
     installmentNumber: resolveInstallmentNumber(row),
     installmentTotal: resolveInstallmentTotal(row),
+    isService: Boolean(row.categories?.is_service),
     notes,
     paymentMethodId: row.payment_method_id,
     paymentMethodClosingDay: resolveTransactionPaymentMethodClosingDay(row),
@@ -1221,7 +1230,7 @@ async function listCategories(options?: {
   const { supabase, userId } = ctx;
   const { data, error } = await supabase
     .from("categories")
-    .select("id, name, icon, group_type, is_default, monthly_limit")
+    .select("id, name, icon, group_type, is_default, is_service, monthly_limit")
     .eq("user_id", userId)
     .order("is_default", { ascending: false })
     .order("name", { ascending: true });
@@ -1255,6 +1264,7 @@ export async function listCategoryOverview(
       icon: toCategoryIcon(category.name, category.icon),
       id: category.id,
       isDefault: Boolean(category.is_default),
+      isService: Boolean(category.is_service),
       label,
       monthlyLimit: Number(category.monthly_limit ?? 0),
       name: category.name,
@@ -1289,7 +1299,7 @@ async function getCategoryForMutation(categoryId: string) {
   const { supabase, userId } = await getUserContext();
   const { data, error } = await supabase
     .from("categories")
-    .select("id, name, icon, group_type, is_default, monthly_limit")
+    .select("id, name, icon, group_type, is_default, is_service, monthly_limit")
     .eq("id", categoryId)
     .eq("user_id", userId)
     .maybeSingle();
@@ -1493,8 +1503,7 @@ function buildPaymentBills(
         !transaction.isCreditCardInvoice &&
         !getInvoiceAdvancePaymentInvoiceId(transaction) &&
         !transaction.notes?.startsWith("subscription") &&
-        (transaction.paymentMethodType === "boleto" ||
-          transaction.paymentMethodType === "bank"),
+        (transaction.paymentMethodType === "boleto" || transaction.isService),
     )
     .map((transaction) => ({
       amount: Math.abs(transaction.amount),
@@ -2656,6 +2665,9 @@ export async function createCategory(input: CreateCategoryInput) {
   const { supabase, userId } = await getUserContext();
   const name = assertNonEmptyString(input.name, "Category name");
   const monthlyLimit = Number(input.monthlyLimit ?? 0);
+  const isService =
+    (input.group === "needs" || input.group === "wants") &&
+    Boolean(input.isService);
 
   if (!isCategoryGroup(input.group)) {
     throw new Error("Category group is invalid.");
@@ -2669,6 +2681,7 @@ export async function createCategory(input: CreateCategoryInput) {
     group_type: input.group,
     icon: toCategoryIcon(input.name, input.icon),
     is_default: false,
+    is_service: isService,
     monthly_limit: monthlyLimit,
     name,
     user_id: userId,
@@ -2682,6 +2695,9 @@ export async function createCategory(input: CreateCategoryInput) {
 export async function updateCategory(input: UpdateCategoryInput) {
   const name = assertNonEmptyString(input.name, "Category name");
   const monthlyLimit = Number(input.monthlyLimit ?? 0);
+  const isService =
+    (input.group === "needs" || input.group === "wants") &&
+    Boolean(input.isService);
 
   if (!isCategoryGroup(input.group)) {
     throw new Error("Category group is invalid.");
@@ -2702,6 +2718,7 @@ export async function updateCategory(input: UpdateCategoryInput) {
     .update({
       group_type: input.group,
       icon: toCategoryIcon(input.name, input.icon),
+      is_service: isService,
       monthly_limit: monthlyLimit,
       name,
     })

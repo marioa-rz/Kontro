@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import {
   type CreateCategoryInput,
   type UpdateCategoryInput,
@@ -85,6 +86,7 @@ const emojiOptions = [
 type CategoryFormDefaults = {
   group: CategoryGroup;
   icon: string;
+  isService: boolean;
   monthlyLimit: number;
   name: string;
 };
@@ -94,12 +96,19 @@ function getCategoryFormDefaults(
   defaultGroup: CategoryGroup = "needs",
 ): CategoryFormDefaults {
   if (!category) {
-    return { group: defaultGroup, icon: "🏷️", monthlyLimit: 0, name: "" };
+    return {
+      group: defaultGroup,
+      icon: "🏷️",
+      isService: false,
+      monthlyLimit: 0,
+      name: "",
+    };
   }
 
   return {
     group: category.group ?? "needs",
     icon: category.icon ?? "🏷️",
+    isService: Boolean(category.isService),
     monthlyLimit: category.monthlyLimit ?? 0,
     name: category.showName === false ? "" : (category.name ?? ""),
   };
@@ -113,12 +122,18 @@ function getSubmittedCategoryName(
 }
 
 function buildCategoryPayload(
-  defaults: Pick<CategoryFormDefaults, "group" | "icon" | "monthlyLimit">,
+  defaults: Pick<
+    CategoryFormDefaults,
+    "group" | "icon" | "isService" | "monthlyLimit"
+  >,
   name: string,
 ): CreateCategoryInput {
+  const isExpense = movementTypeForGroup(defaults.group) === "expense";
+
   return {
     group: defaults.group,
     icon: defaults.icon,
+    isService: isExpense && defaults.isService,
     monthlyLimit: defaults.group === "income" ? 0 : defaults.monthlyLimit,
     name,
   };
@@ -258,6 +273,32 @@ function CategoryGroupAndLimitFields({
   );
 }
 
+function CategoryServiceField({
+  isService,
+  setIsService,
+}: {
+  readonly isService: boolean;
+  readonly setIsService: (isService: boolean) => void;
+}) {
+  const { t } = useI18n();
+
+  return (
+    <div className="flex min-h-11 items-center justify-between gap-4 rounded-md border border-border p-3">
+      <div className="space-y-1">
+        <Label htmlFor="category-is-service">{t("category.isService")}</Label>
+        <p className="text-xs text-muted-foreground">
+          {t("category.isServiceDescription")}
+        </p>
+      </div>
+      <Switch
+        id="category-is-service"
+        checked={isService}
+        onCheckedChange={setIsService}
+      />
+    </div>
+  );
+}
+
 type CategoryDialogHeaderProps = {
   readonly isEditing: boolean;
   readonly purpose: "category" | "budget";
@@ -344,6 +385,7 @@ function useCategoryFormFields(
   const [icon, setIcon] = useState("🏷️");
   const [name, setName] = useState("");
   const [group, setGroup] = useState<CategoryGroup>("needs");
+  const [isService, setIsService] = useState(false);
   const [monthlyLimit, setMonthlyLimit] = useState(0);
 
   const resetForm = () => {
@@ -351,6 +393,7 @@ function useCategoryFormFields(
     setIcon(defaults.icon);
     setName(defaults.name);
     setGroup(defaults.group);
+    setIsService(defaults.isService);
     setMonthlyLimit(defaults.monthlyLimit);
   };
 
@@ -368,6 +411,8 @@ function useCategoryFormFields(
     setName,
     group,
     setGroup,
+    isService,
+    setIsService,
     monthlyLimit,
     setMonthlyLimit,
     resetForm,
@@ -382,7 +427,12 @@ type CategorySubmitHandlerOptions = {
   isEditing: boolean;
   fields: Pick<
     ReturnType<typeof useCategoryFormFields>,
-    "name" | "group" | "icon" | "monthlyLimit" | "resetForm"
+    | "name"
+    | "group"
+    | "icon"
+    | "isService"
+    | "monthlyLimit"
+    | "resetForm"
   >;
   setOpen: (open: boolean) => void;
 };
@@ -436,7 +486,7 @@ function useCategorySubmitHandler({
 }: CategorySubmitHandlerOptions) {
   const { t } = useI18n();
   const [isSaving, setIsSaving] = useState(false);
-  const { name, group, icon, monthlyLimit, resetForm } = fields;
+  const { name, group, icon, isService, monthlyLimit, resetForm } = fields;
   const { reportCategorySaved, reportCategorySaveError } =
     useCategorySaveReporters({ resetForm, setOpen, onCreated, isEditing, t });
 
@@ -452,7 +502,7 @@ function useCategorySubmitHandler({
     setIsSaving(true);
     try {
       const payload = buildCategoryPayload(
-        { group, icon, monthlyLimit },
+        { group, icon, isService, monthlyLimit },
         submittedName,
       );
       if (category && updateCategoryAction) {
@@ -510,11 +560,13 @@ type CategoryDialogFieldsProps = Pick<
   ReturnType<typeof useCategoryDialogController>,
   | "group"
   | "icon"
+  | "isService"
   | "isEditing"
   | "monthlyLimit"
   | "name"
   | "setGroup"
   | "setIcon"
+  | "setIsService"
   | "setMonthlyLimit"
   | "setName"
   | "t"
@@ -544,28 +596,20 @@ function CategoryDialogFields(props: CategoryDialogFieldsProps) {
         isGroupLocked={props.isEditing}
         setGroup={props.setGroup}
       />
+      {movementTypeForGroup(props.group) === "expense" ? (
+        <CategoryServiceField
+          isService={props.isService}
+          setIsService={props.setIsService}
+        />
+      ) : null}
     </>
   );
 }
 
 export function NewCategoryDialog(props: NewCategoryDialogProps) {
   const { children, purpose = "category" } = props;
-  const {
-    open,
-    setOpen,
-    isSaving,
-    isEditing,
-    icon,
-    setIcon,
-    name,
-    setName,
-    group,
-    setGroup,
-    monthlyLimit,
-    setMonthlyLimit,
-    handleSubmit,
-    t,
-  } = useCategoryDialogController(props);
+  const controller = useCategoryDialogController(props);
+  const { open, setOpen, isSaving, isEditing, handleSubmit, t } = controller;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -574,19 +618,7 @@ export function NewCategoryDialog(props: NewCategoryDialogProps) {
         <CategoryDialogHeader isEditing={isEditing} purpose={purpose} t={t} />
 
         <form onSubmit={handleSubmit} className="h-fill w-fill space-y-4">
-          <CategoryDialogFields
-            group={group}
-            icon={icon}
-            isEditing={isEditing}
-            monthlyLimit={monthlyLimit}
-            name={name}
-            purpose={purpose}
-            setGroup={setGroup}
-            setIcon={setIcon}
-            setMonthlyLimit={setMonthlyLimit}
-            setName={setName}
-            t={t}
-          />
+          <CategoryDialogFields {...controller} purpose={purpose} />
           <CategoryDialogFooter
             isEditing={isEditing}
             isSaving={isSaving}

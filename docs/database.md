@@ -26,6 +26,7 @@ The current committed schema defines these Supabase tables:
 - `011_localize_guatemala_defaults.sql`: replaces the signup defaults for future users with Kontro's Guatemala-oriented categories and payment methods. It deliberately does not rename or overwrite existing user-owned data.
 - `012_goal_contributions_and_personal_debts.sql`: links savings transactions to goals and records each contribution atomically with the goal balance update.
 - `013_add_personal_debts.sql`: adds owner-scoped personal debts and payments plus an atomic, balance-capped payment RPC.
+- `014_add_service_category_flag.sql`: adds an explicit service flag to categories, backfills known service categories, and updates onboarding defaults.
 
 ## What belongs in the repository
 
@@ -66,6 +67,7 @@ The repository must not include:
 - `icon`
 - `group_type`
 - `is_default`
+- `is_service` — marks expense categories whose movements appear as services due
 - `monthly_limit`
 - `created_at`
 - `updated_at`

@@ -207,6 +207,7 @@ describe("listCategoryOverview", () => {
     icon: null,
     group_type: "needs",
     is_default: true,
+    is_service: true,
     monthly_limit: 500,
   };
   const catWants = {
@@ -259,6 +260,7 @@ describe("listCategoryOverview", () => {
     const shopping = overview.find((item) => item.id === catWants.id);
     expect(food?.spent).toBe(30);
     expect(food?.monthlyLimit).toBe(500);
+    expect(food?.isService).toBe(true);
     expect(shopping?.monthlyLimit).toBe(0);
     expect(overview.find((item) => item.id === catIncome.id)?.group).toBe(
       "income",
@@ -441,6 +443,7 @@ describe("getPaymentsDueData", () => {
   const pmBoletoId = "99999999-9999-4999-8999-999999999999";
   const pmBankId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
   const catGymId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+  const catUtilitiesId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
 
   it("groups invoices, subscriptions and bills for the month, with an explicit userContext", async () => {
     const rows = [
@@ -516,7 +519,7 @@ describe("getPaymentsDueData", () => {
           due_day: null,
         },
       }),
-      // Bills: one boleto, one bank transfer.
+      // Legacy boleto rows remain visible as bills for backward compatibility.
       txRow({
         id: "tx-electricity",
         date: `${CURRENT_MONTH}-10`,
@@ -531,11 +534,47 @@ describe("getPaymentsDueData", () => {
           due_day: null,
         },
       }),
+      // A utility expense is a bill regardless of the real payment method.
+      txRow({
+        id: "tx-internet",
+        date: `${CURRENT_MONTH}-11`,
+        description: "Internet",
+        amount: 300,
+        category_id: catUtilitiesId,
+        categories: {
+          id: catUtilitiesId,
+          name: "Household bills",
+          icon: "💡",
+          group_type: "needs",
+          is_default: false,
+          is_service: true,
+          monthly_limit: 0,
+        },
+        payment_method_id: pmBankId,
+        payment_methods: {
+          id: pmBankId,
+          name: "Bank Transfer",
+          type: "bank",
+          closing_day: null,
+          due_day: null,
+        },
+      }),
+      // A bank transfer is not automatically a service bill.
       txRow({
         id: "tx-rent",
         date: `${CURRENT_MONTH}-12`,
         description: "Rent",
         amount: 45,
+        category_id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+        categories: {
+          id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+          name: "Internet",
+          icon: "💡",
+          group_type: "needs",
+          is_default: false,
+          is_service: false,
+          monthly_limit: 0,
+        },
         payment_method_id: pmBankId,
         payment_methods: {
           id: pmBankId,
@@ -599,11 +638,11 @@ describe("getPaymentsDueData", () => {
     expect(result.bills).toHaveLength(2);
     expect(result.bills.map((bill) => bill.descriptionKey).sort()).toEqual([
       "Electricity",
-      "Rent",
+      "Internet",
     ]);
 
     expect(result.summary.totalInvoices).toBe(100);
-    expect(result.summary.totalBills).toBe(125);
+    expect(result.summary.totalBills).toBe(380);
     expect(result.summary.nextDueDate).not.toBeNull();
   });
 
