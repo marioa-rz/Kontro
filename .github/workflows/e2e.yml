@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  packages: read
 
 concurrency:
   group: e2e-${{ github.ref }}
@@ -48,8 +49,24 @@ jobs:
         with:
           version: latest
 
+      - name: Authenticate to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
       - name: Start local Supabase and apply migrations
-        run: supabase start
+        run: |
+          for i in 1 2 3; do
+            echo "Attempt $i: Starting local Supabase..."
+            if supabase start -x studio,edge-runtime,logflare,vector; then
+              echo "Supabase started successfully."
+              break
+            fi
+            if [ "$i" -eq 3 ]; then
+              echo "Failed to start Supabase after 3 attempts."
+              exit 1
+            fi
+            echo "Attempt $i failed, waiting 15s before retry..."
+            sleep 15
+          done
 
       - name: Export local Supabase connection details
         run: |

@@ -45,6 +45,7 @@ This matrix is the product source of truth for the initial discovery. “Partial
 - Implemented: Guatemala-oriented categories and payment methods for newly created users through migration `011`.
 - Implemented: complete Spanish (`es-GT`) copy for authentication, navigation, dashboard, transactions, categories, budgets, payments, goals, reports, settings, exports, and accessible daily-spending summaries.
 - Implemented: movement categories organized as expenses, income, and savings; budget limits are configured only in the budget flow; the results-first dashboard focuses on budget and credit-card debt amounts.
+- Implemented: expense categories can be marked explicitly as services due, independently from their name or payment method.
 - Implemented: final Kontro visual mark with a high-contrast rose K across the product UI, browser metadata, and Apple touch icon.
 - Implemented: personal debts remain separate from cards and purchases, with owner-scoped balances and capped repayments.
 - Implemented: compact daily, seven-day, and monthly summaries separate income, consumption, savings, debt payments, and available money.

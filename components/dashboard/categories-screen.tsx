@@ -76,16 +76,23 @@ function CategoryIconLabel({ category }: CategoryIconLabelProps) {
       </div>
       <div>
         <h3 className="font-semibold text-foreground">{t(category.label)}</h3>
-        <Badge
-          variant="secondary"
-          className="mt-1 text-xs"
-          style={{
-            backgroundColor: `${category.color}1A`,
-            color: category.color,
-          }}
-        >
-          {t(`common.${movementTypeForGroup(category.group)}`)}
-        </Badge>
+        <div className="mt-1 flex flex-wrap gap-1">
+          <Badge
+            variant="secondary"
+            className="text-xs"
+            style={{
+              backgroundColor: `${category.color}1A`,
+              color: category.color,
+            }}
+          >
+            {t(`common.${movementTypeForGroup(category.group)}`)}
+          </Badge>
+          {category.isService ? (
+            <Badge variant="outline" className="text-xs">
+              {t("category.serviceBadge")}
+            </Badge>
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -106,6 +113,7 @@ function CategoryCardActions({
           group: category.group,
           icon: category.icon,
           id: category.id,
+          isService: category.isService,
           monthlyLimit: category.monthlyLimit,
           name: category.name,
           showName: true,

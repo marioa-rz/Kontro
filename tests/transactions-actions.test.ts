@@ -151,12 +151,13 @@ describe("createCategoryAction / updateCategoryAction / deleteCategoryAction", (
     await createCategoryAction({
       group: "needs",
       icon: "🏠",
+      isService: true,
       monthlyLimit: 500,
       name: "Rent",
     });
 
     expect(createCategory).toHaveBeenCalledWith(
-      expect.objectContaining({ name: "Rent" }),
+      expect.objectContaining({ isService: true, name: "Rent" }),
     );
     expect(revalidatePath).toHaveBeenCalledWith("/categories");
   });
@@ -308,6 +309,19 @@ describe("payment method actions", () => {
 
     expect(createPaymentMethod).toHaveBeenCalled();
     expect(revalidatePath).toHaveBeenCalledWith("/payments");
+  });
+
+  it("rejects service bills as payment methods", async () => {
+    const callsBefore = createPaymentMethod.mock.calls.length;
+
+    await expect(
+      createPaymentMethodAction({
+        name: "Internet",
+        type: "boleto",
+      } as never),
+    ).rejects.toThrow();
+
+    expect(createPaymentMethod).toHaveBeenCalledTimes(callsBefore);
   });
 
   it("updates a payment method", async () => {

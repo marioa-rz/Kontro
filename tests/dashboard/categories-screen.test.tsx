@@ -46,6 +46,7 @@ function category(
     icon: "🏷️",
     id,
     isDefault: false,
+    isService: false,
     label: name,
     monthlyLimit: 0,
     name,
