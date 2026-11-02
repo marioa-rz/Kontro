@@ -409,7 +409,23 @@ describe("TransactionsScreen list rendering", () => {
       />,
     );
 
-    expect(screen.getByText("Hide previous")).toBeInTheDocument();
+    const hideLink = screen.getByText("Hide previous").closest("a");
+    expect(hideLink).toBeInTheDocument();
+    expect(hideLink?.getAttribute("href")).not.toContain("history=1");
+    expect(hideLink?.getAttribute("href")).toContain("month=2026-07");
+  });
+
+  it("matches search text against transaction date", async () => {
+    const user = userEvent.setup();
+    renderScreen();
+
+    await user.type(
+      screen.getByPlaceholderText("Name, group, or note"),
+      today,
+    );
+
+    expect(screen.getByText("Grocery Store")).toBeInTheDocument();
+    expect(screen.queryByText("Zzyzx Gadget")).not.toBeInTheDocument();
   });
 
   it("shows a negative current balance in the expense color", () => {

@@ -355,6 +355,7 @@ function useSelectedMonthNavigation({
   const updateSelectedMonth = (month: number, year: number) => {
     const value = `${year}-${String(month + 1).padStart(2, "0")}`;
     const nextSearchParams = new URLSearchParams(searchParams.toString());
+    nextSearchParams.delete("history");
     nextSearchParams.set("month", value);
     router.push(`${pathname}?${nextSearchParams.toString()}`);
   };

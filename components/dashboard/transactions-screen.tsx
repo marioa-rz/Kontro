@@ -209,11 +209,15 @@ function getInvoiceTransactionTitle(
     : t("transaction.creditCardInvoice");
 }
 
-function buildTransactionSearchText(transaction: Transaction, t: Translate) {
+function buildTransactionSearchText(
+  transaction: Transaction,
+  t: Translate,
+  formatDate?: FormatDate,
+) {
   const invoiceLabelKey =
     transaction.invoice?.paymentMethodKey ?? transaction.paymentMethodKey;
 
-  return [
+  const parts = [
     transaction.isCreditCardInvoice
       ? getInvoiceTransactionTitle(transaction, t)
       : t(transaction.descriptionKey),
@@ -221,15 +225,26 @@ function buildTransactionSearchText(transaction: Transaction, t: Translate) {
     t(`data.group.${transaction.group}`),
     transaction.notes ?? "",
     invoiceLabelKey ? t(invoiceLabelKey) : "",
-  ]
-    .map(normalizeSearchValue)
-    .join(" ");
+    transaction.date,
+  ];
+
+  if (formatDate) {
+    parts.push(
+      formatDate(transaction.date, { day: "numeric", month: "short" }),
+      formatDate(transaction.date, { day: "numeric", month: "long" }),
+      formatDate(transaction.date, { month: "long", year: "numeric" }),
+    );
+  }
+
+  return parts.map(normalizeSearchValue).join(" ");
 }
 
 export function isVisibleInSelectedMonth(
   transaction: Transaction,
   selectedMonth: string,
+  showPrevious = false,
 ) {
+  if (showPrevious) return true;
   return (
     !transaction.isCreditCardInvoicePurchase ||
     transaction.date.startsWith(selectedMonth)
@@ -2418,15 +2433,19 @@ function matchesTransactionFilters(
     groupFilter,
     normalizedQuery,
     t,
+    formatDate,
   }: {
     groupFilter: Transaction["group"] | "all";
     normalizedQuery: string;
     t: Translate;
+    formatDate?: FormatDate;
   },
 ) {
   if (groupFilter !== "all" && transaction.group !== groupFilter) return false;
   if (!normalizedQuery) return true;
-  return buildTransactionSearchText(transaction, t).includes(normalizedQuery);
+  return buildTransactionSearchText(transaction, t, formatDate).includes(
+    normalizedQuery,
+  );
 }
 
 function compareTransactionsBySortOption(
@@ -2482,22 +2501,27 @@ function computeFilteredTransactions(
     groupFilter,
     normalizedQuery,
     sortOption,
+    showPrevious = false,
     t,
+    formatDate,
   }: {
     selectedMonth: string;
     groupFilter: Transaction["group"] | "all";
     normalizedQuery: string;
     sortOption: SortOption;
+    showPrevious?: boolean;
     t: Translate;
+    formatDate?: FormatDate;
   },
 ) {
   const filtered = transactions.filter(
     (transaction) =>
-      isVisibleInSelectedMonth(transaction, selectedMonth) &&
+      isVisibleInSelectedMonth(transaction, selectedMonth, showPrevious) &&
       matchesTransactionFilters(transaction, {
         groupFilter,
         normalizedQuery,
         t,
+        formatDate,
       }),
   );
   return [...filtered].sort((left, right) =>
@@ -2524,16 +2548,34 @@ function useTransactionFilterState() {
   };
 }
 
+function computeFilteredNextInvoices(
+  nextInvoiceTransactions: Transaction[],
+  filter: {
+    groupFilter: Transaction["group"] | "all";
+    normalizedQuery: string;
+    t: Translate;
+    formatDate?: FormatDate;
+  },
+) {
+  return nextInvoiceTransactions.filter((transaction) =>
+    matchesTransactionFilters(transaction, filter),
+  );
+}
+
 function useFilteredTransactions({
   transactions,
   nextInvoiceTransactions,
   selectedMonth,
+  showPrevious,
   t,
+  formatDate,
 }: {
   transactions: Transaction[];
   nextInvoiceTransactions: Transaction[];
   selectedMonth: string;
+  showPrevious?: boolean;
   t: Translate;
+  formatDate?: FormatDate;
 }) {
   const filterState = useTransactionFilterState();
   const { groupFilter, normalizedQuery, sortOption } = filterState;
@@ -2545,21 +2587,31 @@ function useFilteredTransactions({
         groupFilter,
         normalizedQuery,
         sortOption,
+        showPrevious,
         t,
+        formatDate,
       }),
-    [groupFilter, normalizedQuery, selectedMonth, sortOption, t, transactions],
+    [
+      formatDate,
+      groupFilter,
+      normalizedQuery,
+      selectedMonth,
+      showPrevious,
+      sortOption,
+      t,
+      transactions,
+    ],
   );
 
   const filteredNextInvoiceTransactions = useMemo(
     () =>
-      nextInvoiceTransactions.filter((transaction) =>
-        matchesTransactionFilters(transaction, {
-          groupFilter,
-          normalizedQuery,
-          t,
-        }),
-      ),
-    [groupFilter, normalizedQuery, nextInvoiceTransactions, t],
+      computeFilteredNextInvoices(nextInvoiceTransactions, {
+        groupFilter,
+        normalizedQuery,
+        t,
+        formatDate,
+      }),
+    [formatDate, groupFilter, normalizedQuery, nextInvoiceTransactions, t],
   );
 
   const dateGroups = useMemo(
@@ -2943,6 +2995,7 @@ function useTransactionsScreenNavigation({
 
   const transactionsHref = useMemo(() => {
     const params = new URLSearchParams(searchParams.toString());
+    params.delete("history");
     params.set("month", selectedMonth);
     return `/transactions?${params.toString()}`;
   }, [searchParams, selectedMonth]);
@@ -3661,7 +3714,9 @@ function useTransactionsScreenState(props: TransactionsScreenProps) {
     transactions: props.transactions,
     nextInvoiceTransactions: props.nextInvoiceTransactions,
     selectedMonth: base.selectedMonth,
+    showPrevious: props.showPrevious,
     t: base.t,
+    formatDate: base.formatDate,
   });
   const handlers = useTransactionsScreenHandlers({ base, props });
   return { ...base, ...filtering, ...handlers };

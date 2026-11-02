@@ -36,7 +36,7 @@ describe("isVisibleInSelectedMonth", () => {
     expect(isVisibleInSelectedMonth(transaction, "2026-07")).toBe(true);
   });
 
-  it("hides credit card invoice purchases dated in a previous month", () => {
+  it("hides credit card invoice purchases dated in a previous month when showPrevious is false", () => {
     const transaction = makeTransaction({
       id: "tx-3",
       date: "2026-06-28",
@@ -44,5 +44,16 @@ describe("isVisibleInSelectedMonth", () => {
     });
 
     expect(isVisibleInSelectedMonth(transaction, "2026-07")).toBe(false);
+    expect(isVisibleInSelectedMonth(transaction, "2026-07", false)).toBe(false);
+  });
+
+  it("keeps credit card invoice purchases dated in a previous month when showPrevious is true", () => {
+    const transaction = makeTransaction({
+      id: "tx-4",
+      date: "2026-06-28",
+      isCreditCardInvoicePurchase: true,
+    });
+
+    expect(isVisibleInSelectedMonth(transaction, "2026-07", true)).toBe(true);
   });
 });
